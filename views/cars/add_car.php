@@ -1,6 +1,7 @@
 <?php
 include '../../controllers/CarController.php'; // Ensure this path is correct
 
+
 $carsController = new CarController();
 $errors = []; // Initialize an array to hold error messages
 $uploadOk = 1; // Variable to track if the upload should proceed

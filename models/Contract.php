@@ -1,92 +1,88 @@
-
-?>
 <?php
 class Contract {
     private $conn;
-    public $id;
-    public $user_id;
-    public $car_id;
-    public $start_date;
-    public $end_date;
-    public $status;
+    private $id;
+    private $user_id;
+    private $car_id;
+    private $start_date;
+    private $end_date;
+    private $status;
+    private $total_payment;  // New property for total payment
 
     public function __construct($db) {
         $this->conn = $db;
     }
 
-    public function create() {
-        $query = "INSERT INTO contracts (user_id, car_id, start_date, end_date, status) VALUES (:user_id, :car_id, :start_date, :end_date, :status)";
-        $stmt = $this->conn->prepare($query);
-        // Sanitize
-        $this->user_id = htmlspecialchars(string: strip_tags(string: $this->user_id));
-        $this->car_id = htmlspecialchars(string: strip_tags(string: $this->car_id));
-        $this->start_date = htmlspecialchars(string: strip_tags(string: $this->start_date));
-        $this->end_date = htmlspecialchars(string: strip_tags(string: $this->end_date));
-        $this->status = htmlspecialchars(string: strip_tags(string: $this->status));
-
-        // Bind
-        $stmt->bindParam(':user_id', $this->user_id);
-        $stmt->bindParam(':car_id', $this->car_id);
-        $stmt->bindParam(':start_date', $this->start_date);
-        $stmt->bindParam(':end_date', $this->end_date);
-        $stmt->bindParam(':status', $this->status);
-        return $stmt->execute() ? true : false;
+    // Getter and Setter for ID
+    public function getId() {
+        return $this->id;
     }
 
-    public function getAllContracts(): mixed {
-        $query = "SELECT * FROM contracts";
-        $stmt = $this->conn->prepare($query);
-        $stmt->execute();
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    public function setId($id) {
+        $this->id = $id;
     }
 
-    public function getContractById($id): mixed {
-        $query = "SELECT * FROM contracts WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id);
-        $stmt->execute();
-        return $stmt->fetch(PDO::FETCH_ASSOC);
+    // Getter and Setter for User ID
+    public function getUserId() {
+        return $this->user_id;
     }
 
-    public function updateContract() {
-        $query = "UPDATE contracts SET user_id = :user_id, car_id = :car_id, start_date = :start_date, end_date = :end_date, status = :status WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        // Sanitize
-        $this->user_id = htmlspecialchars(string: strip_tags(string: $this->user_id));
-        $this->car_id = htmlspecialchars(string: strip_tags(string: $this->car_id));
-        $this->start_date = htmlspecialchars(string: strip_tags(string: $this->start_date));
-        $this->end_date = htmlspecialchars(string: strip_tags(string: $this->end_date));
-        $this->status = htmlspecialchars(string: strip_tags(string: $this->status));
-
-        // Bind
-        $stmt->bindParam(':user_id', $this->user_id);
-        $stmt->bindParam(':car_id', $this->car_id);
-        $stmt->bindParam(':start_date', $this->start_date);
-        $stmt->bindParam(':end_date', $this->end_date);
-        $stmt->bindParam(':status', $this->status);
-        $stmt->bindParam(':id', $this->id);
-        return $stmt->execute() ? true : false;
+    public function setUserId($user_id) {
+        $this->user_id = $user_id;
     }
 
-    public function deleteContract($id): bool {
-        $query = "DELETE FROM contracts WHERE id = :id";
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':id', $id);
-        return $stmt->execute() ? true : false;
+    // Getter and Setter for Car ID
+    public function getCarId() {
+        return $this->car_id;
     }
 
-    // Function to update stock based on contract status
-    public function updateStock(): void {
-        if ($this->status == 'terminated' || $this->status == 'canceled') {
-            // Increment stock
-            $query = "UPDATE cars SET stock = stock + 1 WHERE id = :car_id";
-        } else {
-            // Decrement stock
-            $query = "UPDATE cars SET stock = stock - 1 WHERE id = :car_id";
-        }
-        $stmt = $this->conn->prepare($query);
-        $stmt->bindParam(':car_id', $this->car_id);
-        $stmt->execute();
+    public function setCarId($car_id) {
+        $this->car_id = $car_id;
     }
+
+    // Getter and Setter for Start Date
+    public function getStartDate() {
+        return $this->start_date;
+    }
+
+    public function setStartDate($start_date) {
+        $this->start_date = $start_date;
+    }
+
+    // Getter and Setter for End Date
+    public function getEndDate() {
+        return $this->end_date;
+    }
+
+    public function setEndDate($end_date) {
+        $this->end_date = $end_date;
+    }
+
+    // Getter and Setter for Status
+    public function getStatus() {
+        return $this->status;
+    }
+
+    public function setStatus($status) {
+        $this->status = $status;
+    }
+
+    // Getter and Setter for Total Payment
+    public function getTotalPayment() {
+        return $this->total_payment;
+    }
+
+    public function setTotalPayment($total_payment) {
+        $this->total_payment = $total_payment;
+    }
+
+    // Function to calculate total payment based on rental duration and daily rate
+   /* public function calculateTotalPayment($daily_rate) {
+        $start = new DateTime($this->start_date);
+        $end = new DateTime($this->end_date);
+        $interval = $start->diff($end);
+        $days = $interval->days;
+        $this->total_payment = $days * $daily_rate;
+    }*/
 }
 ?>
