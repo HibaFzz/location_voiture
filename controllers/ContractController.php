@@ -5,31 +5,30 @@ class ContractController
 {
     
     // Add Contract with payment calculation
-    public function addContract($user_id, $car_id, $start_date, $end_date)
-    {
+    public function addContract($user_id, $car_id, $start_date, $end_date) {
         $db = config::getConnexion();
         try {
             // Fetch car details for price per day
             $carModel = new CarController();
             $car = $carModel->getCar($car_id);
-
+    
             if (!$car) {
                 throw new Exception("Car not found");
             }
-
+    
             // Calculate the number of days between start and end date
             $start = new DateTime($start_date);
             $end = new DateTime($end_date);
             $interval = $start->diff($end);
             $nbJours = $interval->days; // Total number of rental days
-
+    
             // Calculate total payment
             $totalPayment = $nbJours * $car['priceperday'];
-
+    
             // SQL to insert contract
             $sql = "INSERT INTO contracts (user_id, car_id, start_date, end_date, total_payment, status) 
                     VALUES (:user_id, :car_id, :start_date, :end_date, :total_payment, 'active')";
-
+    
             $stmt = $db->prepare($sql);
             $stmt->bindParam(':user_id', $user_id);
             $stmt->bindParam(':car_id', $car_id);
@@ -37,7 +36,7 @@ class ContractController
             $stmt->bindParam(':end_date', $end_date);
             $stmt->bindParam(':total_payment', $totalPayment);
             $stmt->execute();
-
+    
             // Update car availability to 'no' (not available)
             $carModel->updateCarAvailability($car_id, 'no');
             echo "Contract added successfully. Total payment: $totalPayment.";
@@ -147,5 +146,21 @@ class ContractController
         }
         return $sql;
     }
+    public function getAvailableCars() {
+        $db = config::getConnexion(); // Database connection
+        // Assuming a database connection is already established
+        $stmt = $db->prepare("SELECT id, vehicletitle FROM cars WHERE disponible = 1"); // Removed the $this
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC); // Fetch as associative array
+    }
+    
+    public function getCarIdByTitle($title) {
+        $db = config::getConnexion(); // Database connection
+        // Fetch the car ID based on the title
+        $stmt = $db->prepare("SELECT id FROM cars WHERE vehicletitle = :vehicletitle"); // Removed the $this
+        $stmt->execute([':vehicletitle' => $title]);
+        return $stmt->fetchColumn(); // Fetch the ID or false if not found
+    }
+    
 }
 ?>

@@ -83,6 +83,7 @@ class CarController
             die('Erreur: ' . $e->getMessage());
         }
     }
+   
 
     // Fetch distinct fuel types
     public function getDistinctFuelTypes() {
@@ -209,4 +210,5 @@ class CarController
             die('Error: ' . $e->getMessage());
         }
     }
+   
 }

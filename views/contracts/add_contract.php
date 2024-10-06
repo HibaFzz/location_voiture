@@ -1,14 +1,18 @@
 <?php
-include '../../controllers/ContractController.php'; // Include the CarController
+include '../../controllers/ContractController.php'; // Include the ContractController
 
-$carsController = new ContractController();
+$contractController = new ContractController(); // Instance of ContractController
+
 $errors = []; // Initialize an array to hold error messages
+
+// Fetch available cars for the dropdown
+$cars = $contractController->getAvailableCars(); // Assume this method returns an array of cars
 
 // Check if the form is submitted
 if (isset($_POST['submit'])) {
     // Get input values
     $user_id = trim($_POST['user_id']);
-    $car_id = trim($_POST['car_id']);
+    $car_title = trim($_POST['car_id']); // This will be the vehicle title
     $start_date = trim($_POST['start_date']);
     $end_date = trim($_POST['end_date']);
 
@@ -17,8 +21,14 @@ if (isset($_POST['submit'])) {
         $errors[] = "User ID is required.";
     }
 
-    if (empty($car_id)) {
-        $errors[] = "Car ID is required.";
+    if (empty($car_title)) {
+        $errors[] = "Car title is required.";
+    } else {
+        // Convert the car title back to car ID for storage
+        $car_id = $contractController->getCarIdByTitle($car_title); // Fetch car ID using title
+        if (!$car_id) {
+            $errors[] = "Invalid car selected.";
+        }
     }
 
     if (empty($start_date)) {
@@ -37,8 +47,6 @@ if (isset($_POST['submit'])) {
 
     // If there are no errors, proceed to add the contract
     if (empty($errors)) {
-        // Create an instance of ContractController
-        $contractController = new ContractController();
         try {
             $contractController->addContract($user_id, $car_id, $start_date, $end_date);
             // Redirect to the list of contracts after successful insertion
@@ -53,7 +61,7 @@ if (isset($_POST['submit'])) {
 // Display errors (if any)
 if (!empty($errors)) {
     foreach ($errors as $error) {
-        echo "<p style='color:red;'>" . htmlspecialchars($error) . "</p>"; // Escape output for safety
+        echo "<p style='color:red;'>" . $error . "</p>"; // Display error messages directly
     }
 }
 ?>
@@ -73,8 +81,13 @@ if (!empty($errors)) {
         <label for="user_id">User ID:</label><br>
         <input type="text" name="user_id" id="user_id" required><br><br>
 
-        <label for="car_id">Car ID:</label><br>
-        <input type="text" name="car_id" id="car_id" required><br><br>
+        <label for="car_id">Car:</label><br>
+        <select name="car_id" id="car_id" required>
+            <option value="">Select a car</option>
+            <?php foreach ($cars as $car): ?>
+                <option value="<?php echo $car['vehicletitle']; ?>"><?php echo $car['vehicletitle']; ?></option>
+            <?php endforeach; ?>
+        </select><br><br>
 
         <label for="start_date">Start Date (YYYY-MM-DD):</label><br>
         <input type="date" name="start_date" id="start_date" required><br><br>
