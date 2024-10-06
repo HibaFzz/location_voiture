@@ -44,6 +44,41 @@ class ContractController
             die('Error: ' . $e->getMessage());
         }
     }
+    public function cancelContract($contract_id) {
+        $db = config::getConnexion();
+        try {
+            // SQL to fetch the car ID associated with the contract
+            $sql = "SELECT car_id FROM contracts WHERE id = :contract_id AND status = 'active'";
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam(':contract_id', $contract_id);
+            $stmt->execute();
+            
+            // Check if contract exists
+            $contract = $stmt->fetch(PDO::FETCH_ASSOC);
+            if (!$contract) {
+                throw new Exception("Contract not found or already canceled.");
+            }
+    
+            $car_id = $contract['car_id'];
+    
+            // SQL to update the contract status and remove total payment
+            $updateSql = "UPDATE contracts 
+                          SET total_payment = NULL, status = 'canceled' 
+                          WHERE id = :contract_id";
+            $updateStmt = $db->prepare($updateSql);
+            $updateStmt->bindParam(':contract_id', $contract_id);
+            $updateStmt->execute();
+    
+            // Update car availability to 'yes' (available)
+            $carModel = new CarController();
+            $carModel->updateCarAvailability($car_id, 'yes');
+    
+            echo "Contract canceled successfully. Car availability updated.";
+        } catch (Exception $e) {
+            die('Error: ' . $e->getMessage());
+        }
+    }
+    
 
     // List all contracts
     public function listContracts()
