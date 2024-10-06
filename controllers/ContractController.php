@@ -82,17 +82,23 @@ class ContractController
 
     // List all contracts
     public function listContracts()
-    {
-        $db = config::getConnexion();
-        $sql = "SELECT * FROM contracts";
-        try {
-            $stmt = $db->prepare($sql);
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            die('Error: ' . $e->getMessage());
-        }
+{
+    $db = config::getConnexion();
+    $sql = "
+        SELECT contracts.*, users.nom, users.prenom, cars.vehicletitle
+        FROM contracts
+        JOIN users ON contracts.user_id = users.id
+        JOIN cars ON contracts.car_id = cars.id
+    ";
+    try {
+        $stmt = $db->prepare($sql);
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        die('Error: ' . $e->getMessage());
     }
+}
+
 
     // Get contract by ID
     public function getContractById($id)
@@ -126,50 +132,129 @@ class ContractController
     }
 
     // Filter Contracts with specified criteria
-    public function filterContracts($filters = [])
-    {
-        // Base query
-        $sql = "SELECT * FROM contracts WHERE 1=1"; // Default query
-
-        $db = config::getConnexion(); // Database connection
-        $params = []; // Array to hold parameters for prepared statements
-
-        // Filter based on status
-        if (isset($filters['status']) && $filters['status'] !== '') {
-            $sql .= " AND status = :status";
-            $params[':status'] = $filters['status'];
-        }
-
-        // Filter based on start_date
-        if (!empty($filters['start_date'])) {
-            $sql .= " AND start_date >= :start_date";
-            $params[':start_date'] = $filters['start_date'];
-        }
-
-        // Filter based on end_date
-        if (!empty($filters['end_date'])) {
-            $sql .= " AND end_date <= :end_date";
-            $params[':end_date'] = $filters['end_date'];
-        }
-
-        // Search by start_date, end_date, total_payment with LIKE
-        if (!empty($filters['search'])) {
-            $sql .= " AND (start_date LIKE :search OR end_date LIKE :search OR total_payment LIKE :search)";
-            $params[':search'] = '%' . $filters['search'] . '%'; // Using LIKE for partial matches
-        }
-
-        // Apply sorting if required
-        $sql = $this->applySorting($sql, $filters['sort_by'] ?? '', $filters['order'] ?? 'asc');
-
-        try {
-            $stmt = $db->prepare($sql); // Prepare the SQL statement
-            $stmt->execute($params); // Execute with bound parameters
-            return $stmt->fetchAll(PDO::FETCH_ASSOC); // Fetch all results as an associative array
-        } catch (Exception $e) {
-            die('Error: ' . $e->getMessage());
-        }
+    public function filterContracts($filters = [], $limit = 10, $offset = 0)
+{
+    // Base query with JOINs to include user and car details
+    $sql = "
+        SELECT contracts.*, users.nom, users.prenom, cars.vehicletitle
+        FROM contracts
+        JOIN users ON contracts.user_id = users.id
+        JOIN cars ON contracts.car_id = cars.id
+        WHERE 1=1
+    ";
+    
+    $db = config::getConnexion();
+    $params = [];
+    
+    // Filter based on status
+    if (isset($filters['status']) && $filters['status'] !== '') {
+        $sql .= " AND contracts.status = :status";
+        $params[':status'] = $filters['status'];
     }
 
+    // Filter based on start_date
+    if (!empty($filters['start_date'])) {
+        $sql .= " AND contracts.start_date >= :start_date";
+        $params[':start_date'] = $filters['start_date'];
+    }
+
+    // Filter based on end_date
+    if (!empty($filters['end_date'])) {
+        $sql .= " AND contracts.end_date <= :end_date";
+        $params[':end_date'] = $filters['end_date'];
+    }
+
+    // Filter by user name (both first name and last name)
+    if (!empty($filters['user_name'])) {
+        $sql .= " AND (users.nom LIKE :user_name OR users.prenom LIKE :user_name)";
+        $params[':user_name'] = '%' . $filters['user_name'] . '%';
+    }
+
+    // Filter by vehicle title
+    if (!empty($filters['vehicletitle'])) {
+        $sql .= " AND cars.vehicletitle LIKE :vehicletitle";
+        $params[':vehicletitle'] = '%' . $filters['vehicletitle'] . '%';
+    }
+
+    // Apply sorting if required
+    $sql = $this->applySorting($sql, $filters['sort_by'] ?? '', $filters['order'] ?? 'asc');
+
+    // Add pagination (LIMIT and OFFSET)
+    $sql .= " LIMIT :limit OFFSET :offset";
+
+    try {
+        $stmt = $db->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        
+        // Bind other filter parameters
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        die('Error: ' . $e->getMessage());
+    }
+}
+public function getTotalContracts($filters = [])
+{
+    // Base query to count total contracts with filters applied
+    $sql = "
+        SELECT COUNT(*) as total
+        FROM contracts
+        JOIN users ON contracts.user_id = users.id
+        JOIN cars ON contracts.car_id = cars.id
+        WHERE 1=1
+    ";
+
+    $db = config::getConnexion();
+    $params = [];
+
+    // Apply the same filters as in the `filterContracts` method
+    if (isset($filters['status']) && $filters['status'] !== '') {
+        $sql .= " AND contracts.status = :status";
+        $params[':status'] = $filters['status'];
+    }
+
+    if (!empty($filters['start_date'])) {
+        $sql .= " AND contracts.start_date >= :start_date";
+        $params[':start_date'] = $filters['start_date'];
+    }
+
+    if (!empty($filters['end_date'])) {
+        $sql .= " AND contracts.end_date <= :end_date";
+        $params[':end_date'] = $filters['end_date'];
+    }
+
+    if (!empty($filters['user_name'])) {
+        $sql .= " AND (users.nom LIKE :user_name OR users.prenom LIKE :user_name)";
+        $params[':user_name'] = '%' . $filters['user_name'] . '%';
+    }
+
+    if (!empty($filters['vehicletitle'])) {
+        $sql .= " AND cars.vehicletitle LIKE :vehicletitle";
+        $params[':vehicletitle'] = '%' . $filters['vehicletitle'] . '%';
+    }
+
+    try {
+        $stmt = $db->prepare($sql);
+        
+        // Bind filter parameters
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    } catch (Exception $e) {
+        die('Error: ' . $e->getMessage());
+    }
+}
+
+    
     // Apply sorting to the SQL query
     public function applySorting($sql, $sortBy, $order)
     {
@@ -196,6 +281,20 @@ class ContractController
         $stmt->execute([':vehicletitle' => $title]);
         return $stmt->fetchColumn(); // Fetch the ID or false if not found
     }
-    
+    public function getUserById($userId) {
+        $db = config::getConnexion();
+        $stmt = $db->prepare("SELECT nom, prenom, email FROM users WHERE id = :id");
+        $stmt->bindValue(':id', $userId);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public function getCarById($carId) {
+        $db = config::getConnexion();
+        $stmt = $db->prepare("SELECT vehicletitle, matricule, priceperday, fueltype FROM cars WHERE id = :id");
+        $stmt->bindValue(':id', $carId);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    }
 }
 ?>
