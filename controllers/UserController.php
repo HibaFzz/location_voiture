@@ -27,19 +27,26 @@ class UserController
         $params = [];
 
         // Apply filters
+        if (!empty($filters['username'])) {
+            $sql .= " AND username LIKE :username"; // Change to LIKE for partial matching
+            $params[':username'] = "%" . $filters['username'] . "%"; // Use wildcards for partial match
+        }
         if (!empty($filters['role'])) {
             $sql .= " AND role = :role";
             $params[':role'] = $filters['role'];
         }
-
+        if (!empty($filters['cin'])) {
+            $sql .= " AND cin LIKE :cin"; // Change to LIKE for partial matching
+            $params[':cin'] = "%" . $filters['cin'] . "%"; // Use wildcards for partial match
+        }
         if (!empty($filters['date_of_birth'])) {
             $sql .= " AND date_of_birth = :date_of_birth";
             $params[':date_of_birth'] = $filters['date_of_birth'];
         }
 
-
+        // Apply sorting
         $sql = $this->applySorting($sql, $filters['sort_by'] ?? '', $filters['order'] ?? 'asc');
-        
+
         try {
             $stmt = $db->prepare($sql);
             $stmt->execute($params);

@@ -9,7 +9,6 @@ $filters = [
     'role' => $_GET['role'] ?? '',
     'cin' => $_GET['cin'] ?? '',
     'email' => $_GET['email'] ?? '',
-    'phone' => $_GET['phone'] ?? '',
     'date_of_birth' => $_GET['date_of_birth'] ?? '',
     'sort_by' => $_GET['sort_by'] ?? '',
     'order' => $_GET['order'] ?? 'asc'
@@ -133,6 +132,11 @@ $users = $userController->filterUsers($filters);
         
         <div class="filter-card">
             <form method="GET" action="">
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" value="<?= htmlspecialchars($filters['username']); ?>">
+
+                <label for="cin">CIN:</label>
+                <input type="text" id="cin" name="cin" value="<?= htmlspecialchars($filters['cin']); ?>">
 
                 <label for="role">Role:</label>
                 <select id="role" name="role">
@@ -143,7 +147,7 @@ $users = $userController->filterUsers($filters);
                 </select>
 
                 <label for="date_of_birth">Date of Birth:</label>
-                <input type="date" id="date_of_birth" name="date_of_birth" value="<?= $filters['date_of_birth']; ?>">
+                <input type="date" id="date_of_birth" name="date_of_birth" value="<?= htmlspecialchars($filters['date_of_birth']); ?>">
 
                 <label for="sort_by">Sort by:</label>
                 <select id="sort_by" name="sort_by">
@@ -168,21 +172,21 @@ $users = $userController->filterUsers($filters);
         <div class="card-container">
             <?php foreach ($users as $user): ?>
                 <div class="card">
-                    <h2><?= $user['username']; ?></h2>
+                    <h2><?= htmlspecialchars($user['username']); ?></h2>
                     <div>
                         <?php if (!empty($user['photo'])): ?>
-                            <img src="<?= $user['photo']; ?>" alt="User Photo">
+                            <img src="<?= htmlspecialchars($user['photo']); ?>" alt="User Photo">
                         <?php else: ?>
                             <p>No photo available</p>
                         <?php endif; ?>
                     </div>
-                    <p><strong>Date of Birth:</strong> <?= $user['date_of_birth']; ?></p>
-                    <p><strong>Email:</strong> <?= $user['email']; ?></p>
-                    <p><strong>Phone:</strong> <?= $user['numtelephone']; ?></p>
+                    <p><strong>Date of Birth:</strong> <?= htmlspecialchars($user['date_of_birth']); ?></p>
+                    <p><strong>Email:</strong> <?= htmlspecialchars($user['email']); ?></p>
+                    <p><strong>Phone:</strong> <?= htmlspecialchars($user['numtelephone']); ?></p>
                     <div class="actions">
-                        <a href="view_user.php?id=<?= $user['id']; ?>">View</a> |
-                        <a href="update_user.php?id=<?= $user['id']; ?>">Edit</a> |
-                        <a href="delete_user.php?id=<?= $user['id']; ?>" onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
+                        <a href="view_user.php?id=<?= htmlspecialchars($user['id']); ?>">View</a> |
+                        <a href="update_user.php?id=<?= htmlspecialchars($user['id']); ?>">Edit</a> |
+                        <a href="delete_user.php?id=<?= htmlspecialchars($user['id']); ?>" onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
                     </div>
                 </div>
             <?php endforeach; ?>
