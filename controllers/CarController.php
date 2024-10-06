@@ -29,19 +29,27 @@ class CarController
         // Base query
         $sql = "SELECT * FROM cars WHERE 1=1";
         $params = []; // Array to hold the parameters for prepared statements
-
+    
         // Add filters based on the criteria provided
         if (!empty($filters['brand'])) {
             $sql .= " AND brand = :brand";
             $params[':brand'] = $filters['brand'];
         }
-        if (isset($filters['disponible']) && $filters['disponible'] !== '') {
+        if (isset($filters['disponible'])) {
+            // Assuming 'disponible' is a boolean, filter based on its truthiness
             $sql .= " AND disponible = :disponible";
-            $params[':disponible'] = $filters['disponible'];
+            $params[':disponible'] = $filters['disponible'] === 'oui' ? 1 : 0; // Map to 1 or 0
         }
         if (!empty($filters['fueltype'])) {
-            $sql .= " AND fueltype = :fueltype";
-            $params[':fueltype'] = $filters['fueltype'];
+            // Prepare the fuel types for the SQL IN clause
+            $placeholders = [];
+            foreach ($filters['fueltype'] as $key => $type) {
+                $placeholder = ":fueltype{$key}";
+                $placeholders[] = $placeholder;
+                $params[$placeholder] = $type;
+            }
+            // Use IN clause for filtering by fuel types
+            $sql .= " AND fueltype IN (" . implode(', ', $placeholders) . ")";
         }
         if (!empty($filters['nbrpersonne'])) {
             $sql .= " AND nbrpersonne >= :nbrpersonne";
@@ -59,10 +67,10 @@ class CarController
             $sql .= " AND matricule LIKE :matricule";
             $params[':matricule'] = "%" . $filters['matricule'] . "%";  // Using LIKE for partial matches
         }
-
+    
         // Apply sorting if required
         $sql = $this->applySorting($sql, $filters['sort_by'] ?? '', $filters['order'] ?? 'asc');
-
+    
         try {
             $stmt = $this->db->prepare($sql); // Prepare the SQL statement
             $stmt->execute($params); // Execute with bound parameters
@@ -71,6 +79,7 @@ class CarController
             die('Erreur: ' . $e->getMessage());
         }
     }
+    
 
     // Get distinct brands from the cars
     public function getDistinctBrands() {

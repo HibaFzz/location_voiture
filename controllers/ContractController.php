@@ -1,5 +1,5 @@
 <?php
-include '../../controllers/CarController.php';
+include 'CarController.php';
 
 class ContractController
 {

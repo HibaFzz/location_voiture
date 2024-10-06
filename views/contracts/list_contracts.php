@@ -51,6 +51,13 @@ $totalPages = ceil($totalContracts / $limit);
 </head>
 <body>
     <div class="container mt-5">
+        <!-- Start Switcher -->
+    <?php include('views/frontOffice/includes/colorswitcher.php');?>
+    <!-- /Switcher -->  
+            
+    <!--Header-->
+    <?php include('frontOffice/includes/header.php');?>
+<!-- /Header --> 
         <h1 class="text-center text-primary mb-4">List of Contracts</h1>
 
         <div class="row">
