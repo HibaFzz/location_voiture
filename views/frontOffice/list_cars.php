@@ -6,12 +6,14 @@ $carsController = new CarController();
 // Define the fuel types
 $essence = 'essence'; // Example value
 $diesel = 'diesel';   // Example value
+$essence = 'essence'; // Example value
+$all = '';   // Example value
 
 $filters = [
     'brand' => $_GET['brand'] ?? '',
     'disponible' => $_GET['disponible'] ?? '',
     // Using an array to hold multiple fuel types
-    'fueltype' => isset($_GET['fueltype']) ? $_GET['fueltype'] : [$essence, $diesel],
+    'fueltype' => isset($_GET['fueltype']) ? $_GET['fueltype'] : [], 
     'nbrpersonne' => $_GET['nbrpersonne'] ?? '',
     'vehicletitle' => $_GET['vehicletitle'] ?? '',
     'modelyear' => $_GET['modelyear'] ?? '',
@@ -209,10 +211,15 @@ $cars = $carsController->filterCars($filters);
                     <h2><?= $car['vehicletitle']; ?></h2>
                     <p><?= $car['brand']; ?></p>
                     <p class="price">$<?= $car['priceperday']; ?>/day</p>
-                    <p><strong>Available:</strong> <?= ($car['disponible'] === 'oui') ? '<span style="color: green;">Yes</span>' : '<span style="color: red;">No</span>'; ?></p>
+                    <p>
+                        <strong>Available:</strong> 
+                        <?= ($car['disponible'] === 'true' || $car['disponible'] === 1) 
+                            ? '<span style="color: green;">Oui</span>' 
+                            : '<span style="color: red;">Non</span>'; ?>
+                    </p>
                     <p>Year: <?= $car['modelyear']; ?></p>
                     <div class="actions">
-                        <a href="book_car.php?id=<?= $car['id']; ?>" class="action-button book-now">Book now</a>
+                        <a href="book_car.php?user_id=4&car_id=<?= $car['id']; ?>" class="action-button book-now">Book now</a>
                         <a href="view_car.php?id=<?= $car['id']; ?>" class="action-button view">View</a> 
                     </div>
                 </div>

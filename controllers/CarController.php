@@ -48,7 +48,7 @@ class CarController
                 $placeholders[] = $placeholder;
                 $params[$placeholder] = $type;
             }
-            // Use IN clause for filtering by fuel types
+            // Add the IN clause for filtering by fuel types
             $sql .= " AND fueltype IN (" . implode(', ', $placeholders) . ")";
         }
         if (!empty($filters['nbrpersonne'])) {
@@ -200,24 +200,76 @@ class CarController
         }
     }
     public function updateCarAvailability($car_id, $availability) {
-        // Validate availability input
-        if (!in_array($availability, ['yes', 'no'])) {
-            throw new Exception("Invalid availability status. Use 'yes' or 'no'.");
+        // Validate availability input to ensure it's a boolean
+        if (!is_bool($availability)) {
+            throw new Exception("Invalid availability status. Use true (available) or false (not available).");
         }
-
+    
+        // Convert boolean to integer (1 or 0) for database storage
+        $availabilityValue = $availability ? true : false;
+    
         // SQL to update car availability
         $sql = "UPDATE cars SET disponible = :availability WHERE id = :car_id";
-
+    
         try {
             $stmt = $this->db->prepare($sql);
-            $stmt->bindParam(':availability', $availability);
-            $stmt->bindParam(':car_id', $car_id);
+            $stmt->bindParam(':availability', $availabilityValue, PDO::PARAM_INT);
+            $stmt->bindParam(':car_id', $car_id, PDO::PARAM_INT);
             $stmt->execute();
-
+    
             echo "Car availability updated successfully.";
         } catch (Exception $e) {
             die('Error: ' . $e->getMessage());
         }
     }
+    
+    public function addContract($user_id, $car_id, $start_date, $end_date) {
+        $db = config::getConnexion();
+        try {
+            // Fetch car details for price per day
+            $carModel = new CarController();
+            $car = $carModel->getCar($car_id);
+    
+            if (!$car) {
+                throw new Exception("Car not found");
+            }
+    
+            // Calculate the number of days between start and end date
+            $start = new DateTime($start_date);
+            $end = new DateTime($end_date);
+            $interval = $start->diff($end);
+            $nbJours = $interval->days; // Total number of rental days
+    
+            // Ensure that the rental period is valid
+            if ($nbJours <= 0) {
+                throw new Exception("End date must be after start date.");
+            }
+    
+            // Calculate total payment
+            $totalPayment = $nbJours * $car['priceperday'];
+    
+            // SQL to insert contract
+            $sql = "INSERT INTO contracts (user_id, car_id, start_date, end_date, total_payment, status) 
+                    VALUES (:user_id, :car_id, :start_date, :end_date, :total_payment, 'active')";
+    
+            $stmt = $db->prepare($sql);
+            $stmt->bindParam(':user_id', $user_id);
+            $stmt->bindParam(':car_id', $car_id);
+            $stmt->bindParam(':start_date', $start_date);
+            $stmt->bindParam(':end_date', $end_date);
+            $stmt->bindParam(':total_payment', $totalPayment);
+            $stmt->execute();
+    
+            // Update car availability to 'no' (not available)
+            $carModel->updateCarAvailability($car_id, 'no');
+    
+            // Return success message with total payment
+            return "Contract added successfully. Total payment: $$totalPayment.";
+        } catch (Exception $e) {
+            // Return error message instead of dying the script
+            return "Error: " . $e->getMessage();
+        }
+    }
+    
    
 }

@@ -50,7 +50,7 @@ class ContractController
             // SQL to fetch the car ID associated with the contract
             $sql = "SELECT car_id FROM contracts WHERE id = :contract_id AND status = 'active'";
             $stmt = $db->prepare($sql);
-            $stmt->bindParam(':contract_id', $contract_id);
+            $stmt->bindParam(':contract_id', $contract_id, PDO::PARAM_INT);
             $stmt->execute();
             
             // Check if contract exists
@@ -66,12 +66,12 @@ class ContractController
                           SET total_payment = NULL, status = 'canceled' 
                           WHERE id = :contract_id";
             $updateStmt = $db->prepare($updateSql);
-            $updateStmt->bindParam(':contract_id', $contract_id);
+            $updateStmt->bindParam(':contract_id', $contract_id, PDO::PARAM_INT);
             $updateStmt->execute();
     
-            // Update car availability to 'yes' (available)
+            // Update car availability to true (available)
             $carModel = new CarController();
-            $carModel->updateCarAvailability($car_id, 'yes');
+            $carModel->updateCarAvailability($car_id, true);  // Pass boolean true for availability
     
             echo "Contract canceled successfully. Car availability updated.";
         } catch (Exception $e) {
