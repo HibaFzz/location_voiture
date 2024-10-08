@@ -1,10 +1,13 @@
 <?php
 include '../../controllers/CarController.php'; // Ensure this path is correct
 
-
 $carsController = new CarController();
 $errors = []; // Initialize an array to hold error messages
 $uploadOk = 1; // Variable to track if the upload should proceed
+$disponibleOptions = [
+    1 => "Available",
+    0 => "Not Available"
+];
 
 // Define your brands and their respective models
 $brandsWithModels = [
@@ -27,7 +30,7 @@ $brandsWithModels = [
 ];
 
 // Define fuel types
-$fuelTypes = ['essence', 'diesel'];
+$fuelTypes = ['essence', 'diesel','electric'];
 
 // Define model years (assuming from 2000 to current year)
 $currentYear = date("Y");
@@ -47,7 +50,7 @@ if (isset($_POST['submit'])) {
     $fueltype = trim($_POST['fueltype']);
     $modelyear = trim($_POST['modelyear']);
     $nbrpersonne = trim($_POST['nbrpersonne']);
-    $disponible = trim($_POST['disponible']); // Get the disponible value
+    $disponible = isset($_POST['disponible']) ? (int)$_POST['disponible'] : 0; // Default to 0 if not set
 
     // Assume a default image path (this could be retrieved from your database)
     $target_file = ""; // Initialize the image path
@@ -149,7 +152,7 @@ if (isset($_POST['submit'])) {
 // Display errors (if any)
 if (!empty($errors)) {
     foreach ($errors as $error) {
-        echo "<p>" . htmlspecialchars($error) . "</p>"; // Escape output for safety
+        echo "<p>" . $error . "</p>"; // Output error message directly
     }
 }
 ?>
@@ -157,81 +160,266 @@ if (!empty($errors)) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <?php include('header.php'); ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Add New Car</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f7f9fc; /* Light gray background */
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            text-align: center;
+            color: #007bff; /* Blue color for sub-title */
+            font-size: 2em; /* Size of the title */
+            margin-bottom: 20px; /* Space below the title */
+        }
+
+        form {
+            background-color: #ffffff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin: auto;
+            max-width: 900px; /* Maximum width for form */
+        }
+
+        .form-section {
+            display: flex; /* Flexbox layout */
+            justify-content: space-between; /* Space between the sections */
+            margin: 20px 0; /* Margin for space between sections */
+        }
+
+        .section {
+            flex: 1; /* Equal growth for sections */
+            min-width: 300px; /* Minimum width for sections */
+            max-width: 400px; /* Maximum width for sections */
+            padding: 0 10px; /* Side padding */
+        }
+
+        .section-title {
+            font-size: 1.5em;
+            color: #007bff; /* Blue for section titles */
+            margin-bottom: 15px;
+            border-bottom: 2px solid #007bff; /* Underline effect */
+            padding-bottom: 5px; /* Space below title */
+        }
+
+        .form-group {
+            display: flex; /* Flexbox for form groups */
+            margin-bottom: 15px; /* Space between form groups */
+        }
+
+        .form-group label {
+            flex-basis: 35%; /* Width for label */
+            margin-right: 10px; /* Space between label and input */
+            font-weight: bold; /* Bold labels */
+        }
+
+        .form-group input[type="text"],
+        .form-group select,
+        .form-group textarea {
+            flex-basis: 60%; /* Adjust width of input/select */
+            padding: 8px; /* Padding for inputs */
+            border: 1px solid #007bff; /* Bootstrap primary color */
+            border-radius: 4px;
+            transition: border-color 0.3s; /* Transition for border color on focus */
+        }
+
+        .form-group select:focus,
+        .form-group input[type="text"]:focus,
+        .form-group textarea:focus {
+            border-color: #0056b3; /* Darker blue on focus */
+            outline: none; /* Remove default outline */
+        }
+
+        input[type="submit"] {
+            background-color: #007bff; /* Bootstrap primary color */
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 20px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s, transform 0.3s; /* Transition effects */
+            margin-top: 10px;
+            width: 100%; /* Full width button */
+        }
+
+        input[type="submit"]:hover {
+            background-color: #0056b3; /* Darker blue on hover */
+            transform: translateY(-2px); /* Lift effect */
+        }
+
+        .error-message {
+            color: red;
+            font-weight: bold;
+            margin: 15px 0;
+            text-align: center;
+        }
+
+        .return-link {
+            text-align: center; /* Center the return link */
+            margin-top: 20px; /* Space above the return link */
+            font-size: 1.2em; /* Size of the return link */
+        }
+
+        .return-link a {
+            color: #007bff; /* Blue color for link */
+            text-decoration: none; /* Remove underline */
+        }
+
+        .return-link a:hover {
+            text-decoration: underline; /* Underline on hover */
+        }
+
+        /* Responsive design for smaller screens */
+        @media (max-width: 600px) {
+            .form-section {
+                flex-direction: column; /* Stack sections on small screens */
+            }
+
+            .form-group {
+                flex-direction: column; /* Stack labels and inputs */
+                align-items: flex-start; /* Align items to the start */
+            }
+
+            .form-group label {
+                flex-basis: auto; /* Reset label width */
+                margin-bottom: 5px; /* Space between label and input */
+            }
+
+            .form-group select,
+            .form-group input[type="text"],
+            .form-group textarea {
+                flex-basis: 100%; /* Full width on small screens */
+            }
+
+            input[type="submit"] {
+                width: auto; /* Reset button width */
+            }
+        }
+    </style>
 </head>
 <body>
-    <h1>Add New Car</h1>
+    <h2>Add A New Car</h2>
 
-    <!-- Display errors if any exist -->
+    <!-- Display errors if any -->
     <?php if (!empty($errors)): ?>
-        <div style="color: red;">
+        <div class="error-message">
             <?php foreach ($errors as $error): ?>
-                <p><?php echo htmlspecialchars($error); ?></p> <!-- Escape output for safety -->
+                <p><?php echo $error; ?></p>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
 
     <!-- Form to add a new car -->
     <form action="" method="POST" enctype="multipart/form-data">
-        <label for="matricule">Matricule (Format: 111TUN1111):</label><br>
-        <input type="text" name="matricule" id="matricule" required><br><br>
+        <div class="form-section">
+            <div class="section">
+                <div class="section-title">Car Information</div>
+                <div class="form-group">
+                    <label for="matricule">Matricule (Format: 111TUN1111):</label>
+                    <input type="text" name="matricule" id="matricule" required>
+                </div>
 
-        <label for="image">Image (Optional):</label><br>
-        <input type="file" name="image" id="image" accept="image/*"><br><br>
+                <div class="form-group">
+                    <label for="image">Image (Optional):</label>
+                    <input type="file" name="image" id="image" accept="image/*">
+                </div>
 
-        <label for="brand">Brand:</label><br>
-        <select name="brand" id="brand" required onchange="updateModels()">
-            <option value="">Select Brand</option>
-            <?php foreach (array_keys($brandsWithModels) as $brandOption): ?>
-                <option value="<?php echo htmlspecialchars($brandOption); ?>"><?php echo htmlspecialchars($brandOption); ?></option>
-            <?php endforeach; ?>
-        </select><br><br>
+                <div class="form-group">
+                    <label for="brand">Brand:</label>
+                    <select name="brand" id="brand" required onchange="updateModels()">
+                        <option value="">Select Brand</option>
+                        <?php foreach (array_keys($brandsWithModels) as $brandOption): ?>
+                            <option value="<?php echo $brandOption; ?>"><?php echo $brandOption; ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-        <label for="model">Model:</label><br>
-        <select name="model" id="model" required>
-            <option value="">Select Model</option>
-        </select><br><br>
+                <div class="form-group">
+                    <label for="model">Model:</label>
+                    <select name="model" id="model" required>
+                        <option value="">Select Model</option>
+                    </select>
+                </div>
 
-        <label for="vehicleoverview">Vehicle Overview:</label><br>
-        <textarea name="vehicleoverview" id="vehicleoverview" rows="4" required></textarea><br><br>
+                <div class="form-group">
+                    <label for="vehicleoverview">Vehicle Overview:</label>
+                    <textarea name="vehicleoverview" id="vehicleoverview" rows="4" placeholder="Provide a brief overview of the vehicle..."></textarea>
+                </div>
+            </div>
 
-        <label for="priceperday">Price Per Day:</label><br>
-        <input type="text" name="priceperday" id="priceperday" required><br><br>
+            <div class="section">
+                <div class="section-title">Pricing & Availability</div>
+                <div class="form-group">
+                    <label for="priceperday">Price Per Day (in currency):</label>
+                    <input type="text" name="priceperday" id="priceperday" required placeholder="Enter price...">
+                </div>
 
-        <label for="fueltype">Fuel Type:</label><br>
-        <select name="fueltype" id="fueltype" required>
-            <option value="">Select Fuel Type</option>
-            <?php foreach ($fuelTypes as $fuel): ?>
-                <option value="<?php echo htmlspecialchars($fuel); ?>"><?php echo htmlspecialchars($fuel); ?></option>
-            <?php endforeach; ?>
-        </select><br><br>
+                <div class="form-group">
+                    <label for="fueltype">Fuel Type:</label>
+                    <select name="fueltype" id="fueltype" required>
+                        <option value="">Select Fuel Type</option>
+                        <?php foreach ($fuelTypes as $fuel): ?>
+                            <option value="<?php echo $fuel; ?>"><?php echo $fuel; ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-        <label for="modelyear">Model Year:</label><br>
-        <select name="modelyear" id="modelyear" required>
-            <option value="">Select Model Year</option>
-            <?php foreach ($modelYears as $year): ?>
-                <option value="<?php echo htmlspecialchars($year); ?>"><?php echo htmlspecialchars($year); ?></option>
-            <?php endforeach; ?>
-        </select><br><br>
+                <div class="form-group">
+                    <label for="modelyear">Model Year:</label>
+                    <select name="modelyear" id="modelyear" required>
+                        <option value="">Select Model Year</option>
+                        <?php foreach ($modelYears as $year): ?>
+                            <option value="<?php echo $year; ?>"><?php echo $year; ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-        <label for="nbrpersonne">Number of Persons:</label><br>
-        <select name="nbrpersonne" id="nbrpersonne" required>
-            <option value="">Select Number of Persons</option>
-            <?php foreach ($personOptions as $person): ?>
-                <option value="<?php echo htmlspecialchars($person); ?>"><?php echo htmlspecialchars($person); ?></option>
-            <?php endforeach; ?>
-        </select><br><br>
+                <div class="form-group">
+                    <label for="nbrpersonne">Number of Persons:</label>
+                    <select name="nbrpersonne" id="nbrpersonne" required>
+                        <option value="">Select Number of Persons</option>
+                        <?php foreach ($personOptions as $person): ?>
+                            <option value="<?php echo $person; ?>"><?php echo $person; ?></option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
 
-        <label for="disponible">Available:</label><br>
-        <select name="disponible" id="disponible" required>
-            <option value="oui">Yes</option>
-            <option value="non">No</option>
-        </select><br><br>
+                <div class="form-group">
+                    <label for="disponible">Available:</label>
+                    <select name="disponible" id="disponible" required>
+                        <?php foreach ($disponibleOptions as $value => $label): ?>
+                            <option value="<?php echo $value; ?>" <?= (isset($disponible) && $disponible == $value) ? 'selected' : ''; ?>>
+                                <?php echo $label; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+            </div>
+        </div>
 
         <input type="submit" name="submit" value="Add Car">
     </form>
+
+    <!-- Return to list of cars link -->
+    <div class="return-link">
+        <a href="list_cars.php">Return to List Cars</a>
+    </div>
 
     <script>
         // JavaScript to update the models based on the selected brand

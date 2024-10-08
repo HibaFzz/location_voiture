@@ -25,64 +25,192 @@ class CarController
     }
 
     // Filter cars based on various criteria
-    public function filterCars($filters = []) {
+    public function getDistinctBrands()
+    {
+        return ["STAFIM", "TAMC", "Renault", "Peugeot", "Citroën", "Volkswagen", "Fiat", "Toyota", "Kia", "Hyundai", "Nissan", "BMW", "Mercedes-Benz", "Audi", "Dacia", "MG"];
+    }
+
+    // Method to fetch distinct fuel types
+    public function getDistinctFuelTypes()
+    {
+        return ["diesel", "electric", "essence"];
+    }
+
+    // Method to filter cars based on criteria
+   
+    private function applySorting($sql, $sort_by, $order) {
+        $validSortColumns = ['priceperday', 'modelyear', 'vehicletitle']; // Add valid column names
+        $order = strtolower($order) === 'desc' ? 'DESC' : 'ASC'; // Default to ASC
+    
+        if (!empty($sort_by) && in_array($sort_by, $validSortColumns)) {
+            return $sql . " ORDER BY " . $sort_by . " " . $order;
+        }
+    
+        return $sql; // Return original sql if no valid sort
+    }
+    
+    public function filterCars($filters = [], $limit = 10, $offset = 0) {
         // Base query
-        $sql = "SELECT * FROM cars WHERE 1=1";
+        $sql = "SELECT * FROM cars";
         $params = []; // Array to hold the parameters for prepared statements
     
-        // Add filters based on the criteria provided
-        if (!empty($filters['brand'])) {
-            $sql .= " AND brand = :brand";
-            $params[':brand'] = $filters['brand'];
-        }
-        if (isset($filters['disponible'])) {
-            // Assuming 'disponible' is a boolean, filter based on its truthiness
-            $sql .= " AND disponible = :disponible";
-            $params[':disponible'] = $filters['disponible'] === 'oui' ? 1 : 0; // Map to 1 or 0
-        }
-        if (!empty($filters['fueltype'])) {
-            // Prepare the fuel types for the SQL IN clause
-            $placeholders = [];
-            foreach ($filters['fueltype'] as $key => $type) {
-                $placeholder = ":fueltype{$key}";
-                $placeholders[] = $placeholder;
-                $params[$placeholder] = $type;
+        // Check if all filters are empty
+        $allFiltersEmpty = empty($filters['brand']) && 
+                           empty($filters['disponible']) && 
+                           empty($filters['fueltype']) && 
+                           empty($filters['nbrpersonne']) && 
+                           empty($filters['vehicletitle']) && 
+                           empty($filters['modelyear']) && 
+                           empty($filters['matricule']);
+    
+        if (!$allFiltersEmpty) {
+            // If any filter is provided, apply the WHERE clause
+            $sql .= " WHERE 1=1";
+    
+            // Add filters based on the criteria provided
+            if (!empty($filters['brand'])) {
+                $sql .= " AND brand = :brand";
+                $params[':brand'] = $filters['brand'];
             }
-            // Add the IN clause for filtering by fuel types
-            $sql .= " AND fueltype IN (" . implode(', ', $placeholders) . ")";
-        }
-        if (!empty($filters['nbrpersonne'])) {
-            $sql .= " AND nbrpersonne >= :nbrpersonne";
-            $params[':nbrpersonne'] = $filters['nbrpersonne'];
-        }
-        if (!empty($filters['vehicletitle'])) {
-            $sql .= " AND vehicletitle LIKE :vehicletitle";
-            $params[':vehicletitle'] = "%" . $filters['vehicletitle'] . "%";  // Using LIKE for partial matches
-        }
-        if (!empty($filters['modelyear'])) {
-            $sql .= " AND modelyear = :modelyear";
-            $params[':modelyear'] = $filters['modelyear'];
-        }
-        if (!empty($filters['matricule'])) {
-            $sql .= " AND matricule LIKE :matricule";
-            $params[':matricule'] = "%" . $filters['matricule'] . "%";  // Using LIKE for partial matches
+    
+            if (isset($filters['disponible']) && $filters['disponible'] !== '') {
+                $sql .= " AND disponible = :disponible";
+                $params[':disponible'] = $filters['disponible'] === 'oui' ? 1 : 0; // Map to 1 or 0
+            }
+    
+            if (!empty($filters['fueltype'])) {
+                $placeholders = [];
+                foreach ($filters['fueltype'] as $key => $type) {
+                    $placeholder = ":fueltype{$key}";
+                    $placeholders[] = $placeholder;
+                    $params[$placeholder] = $type;
+                }
+                $sql .= " AND fueltype IN (" . implode(', ', $placeholders) . ")";
+            }
+    
+            if (!empty($filters['nbrpersonne'])) {
+                $sql .= " AND nbrpersonne >= :nbrpersonne";
+                $params[':nbrpersonne'] = $filters['nbrpersonne'];
+            }
+    
+            if (!empty($filters['vehicletitle'])) {
+                $sql .= " AND vehicletitle LIKE :vehicletitle";
+                $params[':vehicletitle'] = "%" . $filters['vehicletitle'] . "%";
+            }
+    
+            if (!empty($filters['modelyear'])) {
+                $sql .= " AND modelyear = :modelyear";
+                $params[':modelyear'] = $filters['modelyear'];
+            }
+    
+            if (!empty($filters['matricule'])) {
+                $sql .= " AND matricule LIKE :matricule";
+                $params[':matricule'] = "%" . $filters['matricule'] . "%";
+            }
         }
     
         // Apply sorting if required
         $sql = $this->applySorting($sql, $filters['sort_by'] ?? '', $filters['order'] ?? 'asc');
     
+        // Add limit and offset
+        $sql .= " LIMIT :limit OFFSET :offset";
+    
         try {
             $stmt = $this->db->prepare($sql); // Prepare the SQL statement
-            $stmt->execute($params); // Execute with bound parameters
+    
+            // Bind limit and offset as integers
+            $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+            $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+    
+            // Bind other parameters
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+    
+            $stmt->execute(); // Execute the prepared statement
             return $stmt->fetchAll(PDO::FETCH_ASSOC); // Fetch all results as an associative array
         } catch (Exception $e) {
-            die('Erreur: ' . $e->getMessage());
+            die('Error: ' . $e->getMessage());
+        }
+    }
+    
+    // Make sure this method is properly handling the sorting logic
+    
+    public function getTotalCarsCount($filters = []) {
+        // Start with the base query
+        $sql = "SELECT COUNT(*) as total FROM cars"; // Fix the COUNT syntax
+        $params = []; // Array to hold the parameters for prepared statements
+    
+        // Check if all filters are empty
+        $allFiltersEmpty = empty($filters['brand']) && 
+                           empty($filters['disponible']) && 
+                           empty($filters['fueltype']) && 
+                           empty($filters['nbrpersonne']) && 
+                           empty($filters['vehicletitle']) && 
+                           empty($filters['modelyear']) && 
+                           empty($filters['matricule']);
+        
+        // Only add the WHERE clause if there are filters
+        if (!$allFiltersEmpty) {
+            $sql .= " WHERE 1=1"; // Add base WHERE clause
+    
+            // Add filters to the query
+            if (!empty($filters['brand'])) {
+                $sql .= " AND brand = :brand";
+                $params[':brand'] = $filters['brand'];
+            }
+            if (isset($filters['disponible'])) {
+                $sql .= " AND disponible = :disponible";
+                $params[':disponible'] = $filters['disponible'] === 'oui' ? 1 : 0;
+            }
+            if (!empty($filters['fueltype'])) {
+                $placeholders = [];
+                foreach ($filters['fueltype'] as $key => $type) {
+                    $placeholder = ":fueltype{$key}";
+                    $placeholders[] = $placeholder;
+                    $params[$placeholder] = $type;
+                }
+                $sql .= " AND fueltype IN (" . implode(', ', $placeholders) . ")";
+            }
+            if (!empty($filters['nbrpersonne'])) {
+                $sql .= " AND nbrpersonne >= :nbrpersonne";
+                $params[':nbrpersonne'] = $filters['nbrpersonne'];
+            }
+            if (!empty($filters['vehicletitle'])) {
+                $sql .= " AND vehicletitle LIKE :vehicletitle";
+                $params[':vehicletitle'] = '%' . $filters['vehicletitle'] . '%';
+            }
+            if (!empty($filters['modelyear'])) {
+                $sql .= " AND modelyear = :modelyear";
+                $params[':modelyear'] = $filters['modelyear'];
+            }
+            if (!empty($filters['matricule'])) {
+                $sql .= " AND matricule LIKE :matricule";
+                $params[':matricule'] = '%' . $filters['matricule'] . '%';
+            }
+        }
+    
+        // Prepare the statement
+        $stmt = $this->db->prepare($sql);
+    
+        // Bind parameters if they exist
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+    
+        try {
+            $stmt->execute(); // Execute the prepared statement
+            $result = $stmt->fetch(PDO::FETCH_ASSOC); // Fetch the result as an associative array
+            return $result['total']; // Return the total count
+        } catch (Exception $e) {
+            die('Error: ' . $e->getMessage());
         }
     }
     
 
+
     // Get distinct brands from the cars
-    public function getDistinctBrands() {
+   /* public function getDistinctBrands() {
         $sql = "SELECT DISTINCT brand FROM cars";
         try {
             $stmt = $this->db->prepare($sql); // Use the class's db property
@@ -105,7 +233,7 @@ class CarController
             die('Erreur: ' . $e->getMessage());
         }
     }
-
+*/
     // Add a new car
     public function addCar($matricule, $image, $vehicletitle, $brand, $vehicleoverview, $priceperday, $fueltype, $modelyear, $nbrpersonne, $disponible) {
         $sql = "INSERT INTO cars (matricule, image, vehicletitle, brand, vehicleoverview, priceperday, fueltype, modelyear, nbrpersonne, disponible) 
@@ -131,39 +259,61 @@ class CarController
     }
 
     // Apply sorting to the SQL query
-    public function applySorting($sql, $sortBy, $order) {
-        // Validate sort column
+  /*  public function applySorting($sql, $sortBy, $order) {
+        // Define valid columns for sorting
         $validSortBy = ['vehicletitle', 'priceperday', 'nbrpersonne', 'modelyear'];
-        if (in_array($sortBy, $validSortBy)) {
-            $order = ($order === 'desc') ? 'DESC' : 'ASC';  // Default to ascending
-            $sql .= " ORDER BY " . $sortBy . " " . $order;
-        }
-        return $sql;
+        
+        // Ensure the sort column is valid; default to 'vehicletitle' if not
+        $sortBy = in_array($sortBy, $validSortBy);
+        
+        // Check if the order is valid; default to 'ASC' if not
+        $order = strtolower($order) === 'desc' ? 'DESC' : 'ASC';
+    
+        // Trim any trailing whitespace in $sql and append the ORDER BY clause
+        return rtrim($sql) . " ORDER BY " . $sortBy . " " . $order;
     }
+    
+    */
 
-    // Update an existing car
-    public function updateCar($id, $matricule, $image, $vehicletitle, $brand, $vehicleoverview, $priceperday, $fueltype, $modelyear, $nbrpersonne, $disponible) {
-        $sql = "UPDATE cars SET matricule = :matricule, image = :image, vehicletitle = :vehicletitle, brand = :brand, 
-                vehicleoverview = :vehicleoverview, priceperday = :priceperday, fueltype = :fueltype, modelyear = :modelyear, nbrpersonne = :nbrpersonne, disponible = :disponible 
-                WHERE id = :id";
-
+    // Update an existing car// Update an existing car
+     // Function to update car details
+     public function updateCar($carId, $matricule, $image, $vehicletitle, $brand, $vehicleoverview, $priceperday, $fueltype, $modelyear, $nbrpersonne, $disponible) {
         try {
-            $query = $this->db->prepare($sql);
-            $query->bindParam(':id', $id);
-            $query->bindParam(':matricule', $matricule);
-            $query->bindParam(':image', $image);
-            $query->bindParam(':vehicletitle', $vehicletitle);
-            $query->bindParam(':brand', $brand);
-            $query->bindParam(':vehicleoverview', $vehicleoverview);
-            $query->bindParam(':priceperday', $priceperday);
-            $query->bindParam(':fueltype', $fueltype);
-            $query->bindParam(':modelyear', $modelyear);
-            $query->bindParam(':nbrpersonne', $nbrpersonne);
-            $query->bindParam(':disponible', $disponible); // Bind disponible
-            $query->execute();
-            echo $query->rowCount() . " records updated successfully";
-        } catch (Exception $e) {
-            die('Error: ' . $e->getMessage());
+            $stmt = $this->db->prepare("
+                UPDATE cars 
+                SET 
+                    matricule = :matricule,
+                    image = :image,
+                    vehicletitle = :vehicletitle,
+                    brand = :brand,
+                    vehicleoverview = :vehicleoverview,
+                    priceperday = :priceperday,
+                    fueltype = :fueltype,
+                    modelyear = :modelyear,
+                    nbrpersonne = :nbrpersonne,
+                    disponible = :disponible
+                WHERE id = :id
+            ");
+
+            // Binding parameters
+            $stmt->bindParam(':matricule', $matricule);
+            $stmt->bindParam(':image', $image);
+            $stmt->bindParam(':vehicletitle', $vehicletitle);
+            $stmt->bindParam(':brand', $brand);
+            $stmt->bindParam(':vehicleoverview', $vehicleoverview);
+            $stmt->bindParam(':priceperday', $priceperday);
+            $stmt->bindParam(':fueltype', $fueltype);
+            $stmt->bindParam(':modelyear', $modelyear);
+            $stmt->bindParam(':nbrpersonne', $nbrpersonne);
+            $stmt->bindParam(':disponible', $disponible);
+            $stmt->bindParam(':id', $carId);
+
+            // Execute the query
+            return $stmt->execute();
+        } catch (PDOException $e) {
+            // Handle exceptions
+            error_log("Error updating car: " . $e->getMessage());
+            return false;
         }
     }
 
@@ -260,8 +410,9 @@ class CarController
             $stmt->bindParam(':total_payment', $totalPayment);
             $stmt->execute();
     
-            // Update car availability to 'no' (not available)
-            $carModel->updateCarAvailability($car_id, 'no');
+            // Update car availability to false (not available)
+            $carModel->updateCarAvailability($car_id, false);
+
     
             // Return success message with total payment
             return "Contract added successfully. Total payment: $$totalPayment.";
@@ -270,6 +421,7 @@ class CarController
             return "Error: " . $e->getMessage();
         }
     }
+    
     
    
 }

@@ -42,8 +42,8 @@ if ($car_id === null) {
         <div id="bookingForm">
             <h2>Booking Details</h2>
             <form id="contractForm" action="" method="GET"> <!-- Submit to the same file -->
-                <input type="hidden" id="user_id" name="user_id" value="<?php echo htmlspecialchars($user_id); ?>"> <!-- Use htmlspecialchars for safety -->
-                <input type="hidden" id="car_id" name="car_id" value="<?php echo htmlspecialchars($car_id); ?>">
+                <input type="hidden" id="user_id" name="user_id" value="<?php echo $user_id; ?>"> <!-- Removed htmlspecialchars -->
+                <input type="hidden" id="car_id" name="car_id" value="<?php echo $car_id; ?>">
                 
                 <label for="start_date">Start Date:</label>
                 <input type="date" id="start_date" name="start_date" required>
@@ -55,7 +55,7 @@ if ($car_id === null) {
             </form>
             <div id="message"><?php echo $message; ?></div> <!-- Display success or error messages -->
             <p id="selectedCar">
-                <strong>Selected Car:</strong> <?php echo htmlspecialchars($car_title); ?> at $<?php echo htmlspecialchars($price_per_day); ?> per day.
+                <strong>Selected Car:</strong> <?php echo $car_title; ?> at $<?php echo $price_per_day; ?> per day.
             </p>
         </div>
     </div>
