@@ -374,50 +374,52 @@ class CarController
     }
     
     public function addContract($user_id, $car_id, $start_date, $end_date) {
-        $db = config::getConnexion();
         try {
             // Fetch car details for price per day
-            $carModel = new CarController();
-            $car = $carModel->getCar($car_id);
-    
+            $car = $this->getCar($car_id);
+
             if (!$car) {
                 throw new Exception("Car not found");
             }
-    
+
             // Calculate the number of days between start and end date
             $start = new DateTime($start_date);
             $end = new DateTime($end_date);
             $interval = $start->diff($end);
             $nbJours = $interval->days; // Total number of rental days
-    
+
             // Ensure that the rental period is valid
             if ($nbJours <= 0) {
                 throw new Exception("End date must be after start date.");
             }
-    
+
             // Calculate total payment
             $totalPayment = $nbJours * $car['priceperday'];
-    
-            // SQL to insert contract
+
+            // Insert contract into database
             $sql = "INSERT INTO contracts (user_id, car_id, start_date, end_date, total_payment, status) 
                     VALUES (:user_id, :car_id, :start_date, :end_date, :total_payment, 'active')";
-    
-            $stmt = $db->prepare($sql);
+
+            $stmt = $this->db->prepare($sql);
             $stmt->bindParam(':user_id', $user_id);
             $stmt->bindParam(':car_id', $car_id);
             $stmt->bindParam(':start_date', $start_date);
             $stmt->bindParam(':end_date', $end_date);
             $stmt->bindParam(':total_payment', $totalPayment);
-            $stmt->execute();
-    
-            // Update car availability to false (not available)
-            $carModel->updateCarAvailability($car_id, false);
 
-    
+            if (!$stmt->execute()) {
+                throw new Exception("Failed to add contract: " . implode(", ", $stmt->errorInfo()));
+            }
+
+            // Update car availability to false (not available)
+            if (!$this->updateCarAvailability($car_id, false)) {
+                throw new Exception("Failed to update car availability.");
+            }
+
             // Return success message with total payment
             return "Contract added successfully. Total payment: $$totalPayment.";
         } catch (Exception $e) {
-            // Return error message instead of dying the script
+            // Return error message instead of terminating the script
             return "Error: " . $e->getMessage();
         }
     }
