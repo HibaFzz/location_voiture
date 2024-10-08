@@ -279,10 +279,10 @@ if (!empty($errors)) {
 
     <!-- Wrap content below header in a container -->
     <div style="padding-top: 100px;"> <!-- Added padding-top to increase space from header -->
-        <!-- Page Title -->
+
         <h1>Update Car</h1>
 
-        <!-- Form -->
+ 
         <form action="" method="POST" enctype="multipart/form-data">
             <div class="form-section">
                 <div class="section">

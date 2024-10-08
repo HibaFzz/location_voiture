@@ -115,6 +115,8 @@ if ($car_id === null) {
             border-radius: 4px;
         }
         .filter-card input[type="submit"] {
+            background-color: #007BFF;
+            color: white;
             cursor: pointer;
             transition: background-color 0.3s;
         }
@@ -431,53 +433,74 @@ if ($car_id === null) {
     <div>
         <?php include('footer.php'); ?>
     </div>
-       <!-- Modal HTML -->
-    <div class="modal fade" id="bookingModal" tabindex="-1" role="dialog" aria-labelledby="bookingModalLabel" aria-hidden="true">
-        <div class="modal-dialog" role="document">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="bookingModalLabel">Book Car</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                        <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <form id="contractForm" action="" method="GET">
-                        <input type="hidden" id="user_id" name="user_id">
-                        <input type="hidden" id="car_id" name="car_id">
-
-                        <label for="start_date">Start Date:</label>
-                        <input type="date" id="start_date" name="start_date" required>
-
-                        <label for="end_date">End Date:</label>
-                        <input type="date" id="end_date" name="end_date" required>
-
-                        <p><strong>Selected Car:</strong> <span id="car_title"></span> at $<span id="price_per_day"></span> per day.</p>
-
-                        <button type="submit" class="btn btn-primary">Book Car</button>
-                    </form>
-                </div>
+       <!-- Modal Structure -->
+       <div class="modal fade" id="bookingModal" tabindex="-1" role="dialog" aria-labelledby="bookingModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="bookingModalLabel">Book Car: <span id="car_title"></span></h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="contractForm">
+                    <input type="hidden" id="user_id" name="user_id">
+                    <input type="hidden" id="car_id" name="car_id">
+                    
+                    <label for="start_date">Start Date:</label>
+                    <input type="date" id="start_date" name="start_date" required>
+                    
+                    <label for="end_date">End Date:</label>
+                    <input type="date" id="end_date" name="end_date" required>
+                    
+                    <div id="selectedCar" class="mt-3">
+                        <strong>Selected Car:</strong> <span id="car_title"></span> at <span id="price_per_day"></span> TND/day.
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <button type="submit" form="contractForm" class="btn btn-primary">Confirm Booking</button>
             </div>
         </div>
     </div>
+</div>
 
-    <script>
-        $(document).ready(function () {
-            // When the Book Now button is clicked, populate modal with car details
-            $('.book-now').on('click', function () {
-                var userId = $(this).data('user_id');
-                var carId = $(this).data('car_id');
-                var carTitle = $(this).data('car_title');
-                var pricePerDay = $(this).data('price_per_day');
+<script>
+    // Populate modal fields with car data when "Book now" is clicked
+    $('#bookingModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget); // Button that triggered the modal
+        var userId = button.data('user_id');
+        var carId = button.data('car_id');
+        var carTitle = button.data('car_title');
+        var pricePerDay = button.data('price_per_day');
 
-                // Set the modal fields
-                $('#bookingModal #user_id').val(userId);
-                $('#bookingModal #car_id').val(carId);
-                $('#bookingModal #car_title').text(carTitle);
-                $('#bookingModal #price_per_day').text(pricePerDay);
-            });
-        });
-    </script>
+        var modal = $(this);
+        modal.find('#user_id').val(userId);
+        modal.find('#car_id').val(carId);
+        modal.find('#car_title').text(carTitle);
+        modal.find('#price_per_day').text(pricePerDay);
+    });
+
+    // Handle form submission without server-side processing
+    $('#contractForm').submit(function(event) {
+        event.preventDefault(); // Prevent default form submission
+
+        // Capture form data
+        var userId = $('#user_id').val();
+        var carId = $('#car_id').val();
+        var startDate = $('#start_date').val();
+        var endDate = $('#end_date').val();
+        var carTitle = $('#car_title').text();
+
+        // Simulate a booking success message
+        alert('Booking successful! You have booked the car: ' + carTitle + '. Please check "Contracts" for more details.');
+
+        // Redirect to list_cars.php
+        window.location.href = 'list_cars.php';
+    });
+</script>
 
 </body>
 

@@ -14,18 +14,17 @@ if (!$car) {
     echo "Car not found.";
     exit();
 }
+
 $message = ""; // Initialize message variable
 
-// Get the user ID and car ID from the GET parameters, with default values if not set
-$user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null; 
-$car_id = isset($_GET['car_id']) ? $_GET['car_id'] : null;
+// Get the user ID and car ID from GET parameters
+$user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
+$car_id = isset($_GET['id']) ? $_GET['id'] : null; // Use 'id' for car ID
 $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
 $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $car_id !== null) { // Check if the request method is GET and if car_id is set
-    $carController = new CarController();
-    $result = $carController->addContract($user_id, $car_id, $start_date, $end_date);
-    
+    $result = $carsController->addContract($user_id, $car_id, $start_date, $end_date);
     $message = $result; // Store the result message to display later
 }
 
@@ -40,7 +39,6 @@ if ($user_id === null) {
 if ($car_id === null) {
     $message = "Car ID is not set.";
 }
-
 
 ?>
 <!DOCTYPE html>
@@ -208,33 +206,99 @@ if ($car_id === null) {
         }
 
         /* Modal styling */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.6);
+            overflow-y: auto;
+        }
+
         .modal-dialog {
-            max-width: 600px;
+            margin: 5% auto;
+            max-width: 500px;
+            width: 90%;
         }
 
         .modal-content {
-            border-radius: 12px;
+            background-color: #fff;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+            position: relative;
+        }
+
+        .modal-header, .modal-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
         }
 
         .modal-header {
-            border-bottom: 1px solid #dee2e6;
-            padding: 15px 20px;
-            font-size: 1.5em;
-            color: #0056b3;
+            border-bottom: 1px solid #ddd;
         }
 
+        .modal-title {
+            color: #007BFF;
+            font-size: 24px;
+        }
+
+        .close {
+            font-size: 28px;
+            cursor: pointer;
+            background: none;
+            border: none;
+            color: #aaa;
+        }
+
+        .close:hover {
+            color: #333;
+        }
+
+        /* Modal Body Styling */
         .modal-body {
             padding: 20px;
         }
 
-        .modal-footer {
-            border-top: 1px solid #dee2e6;
-            padding: 10px 20px;
+        .modal-body label {
+            font-weight: bold;
+            display: block;
+            margin-top: 10px;
         }
 
-        .modal-footer .btn {
+        .modal-body input[type="date"] {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+
+        /* Modal Footer */
+        .modal-footer {
+            border-top: 1px solid #ddd;
+            padding: 10px 15px;
+        }
+
+        .modal-footer button {
             padding: 10px 20px;
-            border-radius: 6px;
+            border-radius: 5px;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .btn-primary {
+            background-color: #007BFF;
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: #0056b3;
         }
 
     </style>
@@ -296,15 +360,7 @@ if ($car_id === null) {
 
                 <?php if ($car['disponible'] === 1): ?>
                     <div style="text-align: center;"> <!-- Center the buttons -->
-                        <a href="#" class="action-button book-now" 
-                        data-toggle="modal" 
-                        data-target="#bookingModal" 
-                        data-user_id="4" 
-                        data-car_id="<?= $car['id']; ?>" 
-                        data-car_title="<?= $car['vehicletitle']; ?>" 
-                        data-price_per_day="<?= $car['priceperday']; ?>">
-                            Book now
-                        </a>
+                    <button id="bookButton" class="action-button">Book Now</button>
                     </div>
                 <?php endif; ?>
             </div>
@@ -315,79 +371,68 @@ if ($car_id === null) {
         </div>
     </div>
 
-    <!-- Modal -->
-    <div class="modal fade" id="bookingModal" tabindex="-1" role="dialog" aria-labelledby="bookingModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
+  <!-- Booking Modal -->
+<div id="bookingModal" class="modal">
+    <div class="modal-dialog">
         <div class="modal-content">
+            <span class="close">&times;</span>
             <div class="modal-header">
-                <h5 class="modal-title" id="bookingModalLabel">Book Car: <span id="car_title"></span></h5>
-                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                    <span aria-hidden="true">&times;</span>
-                </button>
+                <h2 class="modal-title">Booking Details</h2>
             </div>
             <div class="modal-body">
-                <form id="contractForm">
-                    <input type="hidden" id="user_id" name="user_id">
-                    <input type="hidden" id="car_id" name="car_id">
-                    
-                    <label for="start_date">Start Date:</label>
-                    <input type="date" id="start_date" name="start_date" required>
-                    
-                    <label for="end_date">End Date:</label>
-                    <input type="date" id="end_date" name="end_date" required>
-                    
-                    <div id="selectedCar" class="mt-3">
-                        <strong>Selected Car:</strong> <span id="car_title"></span> at <span id="price_per_day"></span> TND/day.
+                <form id="bookingForm" action="list_cars.php" method="GET">
+                    <input type="hidden" name="user_id" value="4">
+                    <input type="hidden" name="car_id" value="<?= $car_id; ?>">
+                    <div>
+                        <label for="start_date">Start Date:</label>
+                        <input type="date" id="start_date" name="start_date" required>
+                    </div>
+                    <div>
+                        <label for="end_date">End Date:</label>
+                        <input type="date" id="end_date" name="end_date" required>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn-primary">Confirm Booking</button>
                     </div>
                 </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="submit" form="contractForm" class="btn btn-primary">Confirm Booking</button>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    // Get the modal
+    var modal = document.getElementById("bookingModal");
+
+    // Get the button that opens the modal
+    var btn = document.getElementById("bookButton");
+
+    // Get the <span> element that closes the modal
+    var span = document.getElementsByClassName("close")[0];
+
+    // When the user clicks the button, open the modal 
+    btn.onclick = function() {
+        modal.style.display = "block";
+    }
+
+    // When the user clicks on <span> (x), close the modal
+    span.onclick = function() {
+        modal.style.display = "none";
+    }
+
+    // When the user clicks anywhere outside of the modal, close it
+    window.onclick = function(event) {
+        if (event.target == modal) {
+            modal.style.display = "none";
+        }
+    }
+</script>
+
+
+
     <?php include('footer.php'); ?>
 </body>
-<script>
-    // Populate modal fields with car data when "Book now" is clicked
-    $('#bookingModal').on('show.bs.modal', function (event) {
-        var button = $(event.relatedTarget); // Button that triggered the modal
-        var userId = button.data('user_id');
-        var carId = button.data('car_id');
-        var carTitle = button.data('car_title');
-        var pricePerDay = button.data('price_per_day');
-
-        var modal = $(this);
-        modal.find('#user_id').val(userId);
-        modal.find('#car_id').val(carId);
-        modal.find('#car_title').text(carTitle);
-        modal.find('#price_per_day').text(pricePerDay);
-    });
-
-    // Handle form submission without server-side processing
-    $('#contractForm').submit(function(event) {
-        event.preventDefault(); // Prevent default form submission
-
-        // Capture form data
-        var userId = $('#user_id').val();
-        var carId = $('#car_id').val();
-        var startDate = $('#start_date').val();
-        var endDate = $('#end_date').val();
-        var carTitle = $('#car_title').text();
-
-        // Simulate a booking success message
-        alert('Booking successful! You have booked the car: ' + carTitle + '. Please check "Contracts" for more details.');
-
-        // Redirect to list_cars.php
-        window.location.href = 'list_cars.php';
-    });
-</script>
 </html>
-
-
-
 
 
 
