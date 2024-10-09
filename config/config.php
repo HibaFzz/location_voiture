@@ -1,6 +1,6 @@
 <?php
 
-class config
+class Config
 {
     private static $pdo = null;
 
@@ -16,10 +16,10 @@ class config
         if (!isset(self::$pdo)) {
             try {
                 self::$pdo = new PDO(
-                    dsn: 'mysql:host=' . self::$host . ';port=' . self::$port . ';dbname=' . self::$dbname,
-                    username: self::$username,
-                    password: self::$password,
-                    options: [
+                    'mysql:host=' . self::$host . ';port=' . self::$port . ';dbname=' . self::$dbname,
+                    self::$username,
+                    self::$password,
+                    [
                         PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
                         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC
                     ]
@@ -27,7 +27,6 @@ class config
 
                 // Check the current database
                 $currentDB = self::$pdo->query('SELECT DATABASE()')->fetchColumn();
-                echo "Connected to database: $currentDB"; // Debug output
             } catch (Exception $e) {
                 die('Erreur: ' . $e->getMessage());
             }
@@ -35,4 +34,7 @@ class config
         return self::$pdo;
     }
 }
-?>
+
+// Usage
+$db = Config::getConnexion();
+

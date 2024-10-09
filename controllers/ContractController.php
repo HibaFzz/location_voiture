@@ -4,6 +4,7 @@ include 'CarController.php';
 class ContractController
 {
     
+    
     // Add Contract with payment calculation
     public function addContract($user_id, $car_id, $start_date, $end_date) {
         $db = config::getConnexion();
@@ -99,6 +100,24 @@ class ContractController
     }
 }
 
+public function deleteContract($id) {
+    $db = Config::getConnexion(); // Ensure Config is correctly capitalized
+    $sql = "DELETE FROM contracts WHERE id = :id";
+    
+    // Correct the way you prepare the statement
+    $req = $db->prepare($sql);
+    
+    $req->bindValue(':id', $id);
+
+    try {
+        $req->execute();
+        echo "Contract deleted successfully.";
+    } catch (Exception $e) {
+        die('Error: ' . $e->getMessage());
+    }
+}
+
+
 
     // Get contract by ID
     public function getContractById($id)
@@ -116,20 +135,52 @@ class ContractController
     }
 
     // Update a contract's status
-    public function updateContractStatus($id, $status)
-    {
+    public function updateContract($contract_id, $start_date, $end_date) {
         $db = config::getConnexion();
-        $sql = "UPDATE contracts SET status = :status WHERE id = :id";
         try {
+            // Fetch the contract
+            $sql = "SELECT * FROM contracts WHERE id = :contract_id";
             $stmt = $db->prepare($sql);
-            $stmt->bindParam(':status', $status);
-            $stmt->bindParam(':id', $id);
+            $stmt->bindParam(':contract_id', $contract_id);
             $stmt->execute();
-            echo "Contract status updated successfully.";
+            $contract = $stmt->fetch();
+    
+            if (!$contract) {
+                throw new Exception("Contract not found");
+            }
+    
+            // Fetch car details for price per day
+            $carModel = new CarController();
+            $car = $carModel->getCar($contract['car_id']);
+            if (!$car) {
+                throw new Exception("Car not found");
+            }
+    
+            // Calculate the new number of days between start and end date
+            $start = new DateTime($start_date);
+            $end = new DateTime($end_date);
+            $interval = $start->diff($end);
+            $nbJours = $interval->days;
+    
+            // Calculate the new total payment
+            $newTotalPayment = $nbJours * $car['priceperday'];
+    
+            // SQL to update contract
+            $sqlUpdate = "UPDATE contracts SET start_date = :start_date, end_date = :end_date, total_payment = :total_payment 
+                          WHERE id = :contract_id";
+            $stmtUpdate = $db->prepare($sqlUpdate);
+            $stmtUpdate->bindParam(':start_date', $start_date);
+            $stmtUpdate->bindParam(':end_date', $end_date);
+            $stmtUpdate->bindParam(':total_payment', $newTotalPayment);
+            $stmtUpdate->bindParam(':contract_id', $contract_id);
+            $stmtUpdate->execute();
+    
+            echo "Contract updated successfully. New total payment: $newTotalPayment.";
         } catch (Exception $e) {
             die('Error: ' . $e->getMessage());
         }
     }
+    
 
     // Filter Contracts with specified criteria
     public function filterContracts($filters = [], $limit = 10, $offset = 0)

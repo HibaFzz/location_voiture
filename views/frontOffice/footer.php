@@ -31,7 +31,8 @@
 
     
 		<section class="ftco-section ftco-intro" style="background-image: url(images/bg_3.jpg);">
-			<div class="overlay"></div>
+    <div class="overlay" style="background-color: #007BFF;"></div>
+
 			<div class="container">
 				<div class="row justify-content-end">
 					<div class="col-md-6 heading-section heading-section-white ftco-animate">

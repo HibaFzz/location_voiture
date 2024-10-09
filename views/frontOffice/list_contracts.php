@@ -47,6 +47,12 @@ $totalPages = ceil($totalContracts / $limit);
             position: absolute;
             top: 10px;
             right: 10px;
+            margin-top: 10px; /* Add margin to create space */
+        }
+
+        .card-img-top {
+            height: 200px;
+            object-fit: cover;
         }
     </style>
 </head>
@@ -54,13 +60,6 @@ $totalPages = ceil($totalContracts / $limit);
 
 <body>
     <div class="container mt-5">
- 
-
-   
-
-        
-        <!-- Start Switcher -->
-<!-- /Header --> 
         <h1 class="text-center text-primary mb-4">List of Contracts</h1>
 
         <div class="row">
@@ -129,14 +128,23 @@ $totalPages = ceil($totalContracts / $limit);
                     <?php foreach ($contracts as $contract): ?>
                         <div class="col-lg-4 col-md-6 mb-4">
                             <div class="card shadow-sm position-relative">
+                                <!-- Image for the contract -->
+                                <img src="uploads/contract.png" class="card-img-top" alt="Contract Image">
+
+                                
                                 <div class="card-body text-center">
-                                    <h5 class="card-title text-primary">Contract ID: <?= $contract['id']; ?></h5>
+                                    <!-- Card Title and Export Button with Spacing -->
+                                    <h5 class="card-title text-primary d-flex justify-content-between align-items-center">
+                                        Contract ID: <?= $contract['id']; ?>
+                                        <a href="export_contract_pdf.php?id=<?= $contract['id']; ?>" class="btn btn-outline-success btn-sm export-pdf-btn ml-auto" style="margin-top: 10px;">Export PDF</a>
+
+                                    </h5>
+                                    
                                     <p class="card-text"><strong>User:</strong> <?= $contract['prenom'] . ' ' . $contract['nom']; ?></p>
                                     <p class="card-text"><strong>Car:</strong> <?= $contract['vehicletitle']; ?></p>
                                     <p class="card-text"><strong>Start Date:</strong> <?= $contract['start_date']; ?></p>
                                     <p class="card-text"><strong>End Date:</strong> <?= $contract['end_date']; ?></p>
                                     <p class="card-text"><strong>Total Payment:</strong> <?= $contract['total_payment']; ?> MAD</p>
-                                    <!-- Status with Bootstrap Badge -->
                                     <p class="card-text">
                                         <strong>Status:</strong>
                                         <?php if ($contract['status'] === 'active'): ?>
@@ -148,15 +156,16 @@ $totalPages = ceil($totalContracts / $limit);
                                         <?php endif; ?>
                                     </p>
 
-                                    <!-- Export PDF Button in Top Right Corner -->
-                                    <a href="export_contract_pdf.php?id=<?= $contract['id']; ?>" class="btn btn-outline-success btn-sm export-pdf-btn">Export PDF</a>
-
                                     <div class="btn-group mt-2">
-                                        <a href="view_contract.php?id=<?= $contract['id']; ?>" class="btn btn-outline-primary btn-sm">View</a>
-                                        <a href="update_contract.php?id=<?= $contract['id']; ?>" class="btn btn-outline-secondary btn-sm">Edit</a>
+                                        <a href="view_contract.php?id=<?= $contract['id']; ?>" class="btn btn-outline-info btn-sm">View</a>|
+                                        <?php if ($contract['status'] === 'active' ): ?>
+                                        <a href="update_contract.php?id=<?= $contract['id']; ?>" class="btn btn-outline-warning btn-sm">Edit</a>|
+                                        <?php endif; ?><hr>
+                                        <?php if ($contract['status'] === 'completed' || $contract['status'] === 'canceled' ): ?>
                                         <a href="delete_contract.php?id=<?= $contract['id']; ?>" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to delete this contract?');">Delete</a>
+                                           <?php endif; ?><hr>
                                         <?php if ($contract['status'] === 'active'): ?>
-                                            <a href="cancel_contract.php?id=<?= $contract['id']; ?>" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to cancel this contract?');">Cancel</a>
+                                            <a href="cancel_contract.php?id=<?= $contract['id']; ?>" class="btn btn-outline-secondary btn-sm" onclick="return confirm('Are you sure you want to cancel this contract?');">Cancel</a>
                                         <?php endif; ?>
                                     </div>
                                 </div>
@@ -175,17 +184,19 @@ $totalPages = ceil($totalContracts / $limit);
         <nav aria-label="Page navigation">
             <ul class="pagination justify-content-center mt-4">
                 <li class="page-item <?= $page == 1 ? 'disabled' : ''; ?>">
-                    <a class="page-link" href="?page=<?= $page - 1; ?>&<?= http_build_query($filters); ?>" aria-label="Previous">
+                    <a class="page-link" href="?page=<?= $page - 1; ?>" aria-label="Previous">
                         <span aria-hidden="true">&laquo;</span>
                     </a>
                 </li>
+
                 <?php for ($i = 1; $i <= $totalPages; $i++): ?>
                     <li class="page-item <?= $page == $i ? 'active' : ''; ?>">
-                        <a class="page-link" href="?page=<?= $i; ?>&<?= http_build_query($filters); ?>"><?= $i; ?></a>
+                        <a class="page-link" href="?page=<?= $i; ?>"><?= $i; ?></a>
                     </li>
                 <?php endfor; ?>
+
                 <li class="page-item <?= $page == $totalPages ? 'disabled' : ''; ?>">
-                    <a class="page-link" href="?page=<?= $page + 1; ?>&<?= http_build_query($filters); ?>" aria-label="Next">
+                    <a class="page-link" href="?page=<?= $page + 1; ?>" aria-label="Next">
                         <span aria-hidden="true">&raquo;</span>
                     </a>
                 </li>
@@ -193,9 +204,9 @@ $totalPages = ceil($totalContracts / $limit);
         </nav>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@4.5.2/dist/js/bootstrap.bundle.min.js"></script>
-</body>
-
-</html>
 <?php include('footer.php'); ?>
+<script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.0.7/dist/umd/popper.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+</body>
+</html>

@@ -298,9 +298,9 @@ if ($car_id === null) {
     </style>
 </head>
 <?php include('header.php'); ?>
-<div>
+<div style="padding-top: 100px;">
 
-    <h1>List of Cars</h1>
+    <h1 class="text-center text-primary mb-4">List of Cars</h1>
     <div class="container">
         <div class="filter-card">
             <form method="GET" action="">

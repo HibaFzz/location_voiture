@@ -274,10 +274,9 @@ if (!empty($errors)) {
     </style>
 </head>
 <body>
-    <!-- Include header at the top of the body -->
+
     <?php include('header.php'); ?>
 
-    <!-- Wrap content below header in a container -->
     <div style="padding-top: 100px;"> <!-- Added padding-top to increase space from header -->
 
         <h1>Update Car</h1>
