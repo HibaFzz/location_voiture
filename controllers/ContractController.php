@@ -334,7 +334,7 @@ public function getTotalContracts($filters = [])
     }
     public function getUserById($userId) {
         $db = config::getConnexion();
-        $stmt = $db->prepare("SELECT nom, prenom, email FROM users WHERE id = :id");
+        $stmt = $db->prepare("SELECT nom, prenom, email , numtelephone ,cin FROM users WHERE id = :id");
         $stmt->bindValue(':id', $userId);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
@@ -342,7 +342,7 @@ public function getTotalContracts($filters = [])
 
     public function getCarById($carId) {
         $db = config::getConnexion();
-        $stmt = $db->prepare("SELECT vehicletitle, matricule, priceperday, fueltype FROM cars WHERE id = :id");
+        $stmt = $db->prepare("SELECT vehicletitle, matricule, priceperday, fueltype , brand , modelyear FROM cars WHERE id = :id");
         $stmt->bindValue(':id', $carId);
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);

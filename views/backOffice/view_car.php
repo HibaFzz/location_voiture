@@ -43,11 +43,11 @@ if ($car_id === null) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
-<?php include('header.php'); ?>
+<?php include('index.php'); ?>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Luxury Car Rental - Car Details</title>
+    <h1 class="text-center text-primary mb-4">Luxury Car Rental - Car Details</h1>
 
     <style>
         body {
@@ -358,11 +358,6 @@ if ($car_id === null) {
                     <div class="price-per-day">€<?= number_format($car['priceperday'], 2); ?> / day</div>
                 </div>
 
-                <?php if ($car['disponible'] === 1): ?>
-                    <div style="text-align: center;"> <!-- Center the buttons -->
-                    <button id="bookButton" class="action-button">Book Now</button>
-                    </div>
-                <?php endif; ?>
             </div>
         </div>
 
@@ -371,66 +366,9 @@ if ($car_id === null) {
         </div>
     </div>
 
-  <!-- Booking Modal -->
-<div id="bookingModal" class="modal">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <span class="close">&times;</span>
-            <div class="modal-header">
-                <h2 class="modal-title">Booking Details</h2>
-            </div>
-            <div class="modal-body">
-                <form id="bookingForm" action="list_cars.php" method="GET">
-                    <input type="hidden" name="user_id" value="4">
-                    <input type="hidden" name="car_id" value="<?= $car_id; ?>">
-                    <div>
-                        <label for="start_date">Start Date:</label>
-                        <input type="date" id="start_date" name="start_date" required>
-                    </div>
-                    <div>
-                        <label for="end_date">End Date:</label>
-                        <input type="date" id="end_date" name="end_date" required>
-                    </div>
-                    <div class="modal-footer">
-                        <button type="submit" class="btn-primary">Confirm Booking</button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
-
-<script>
-    // Get the modal
-    var modal = document.getElementById("bookingModal");
-
-    // Get the button that opens the modal
-    var btn = document.getElementById("bookButton");
-
-    // Get the <span> element that closes the modal
-    var span = document.getElementsByClassName("close")[0];
-
-    // When the user clicks the button, open the modal 
-    btn.onclick = function() {
-        modal.style.display = "block";
-    }
-
-    // When the user clicks on <span> (x), close the modal
-    span.onclick = function() {
-        modal.style.display = "none";
-    }
-
-    // When the user clicks anywhere outside of the modal, close it
-    window.onclick = function(event) {
-        if (event.target == modal) {
-            modal.style.display = "none";
-        }
-    }
-</script>
 
 
 
-    <?php include('footer.php'); ?>
 </body>
 </html>
 

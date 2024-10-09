@@ -20,7 +20,7 @@ $contractsByYear = $model->getContractsByPeriod('year');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Car Rental Statistics</title>
+    <title  class="text-center text-primary mb-4">Car Rental Statistics</title>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <style>
         body {
@@ -112,7 +112,7 @@ $contractsByYear = $model->getContractsByPeriod('year');
 
         <div class="card">
             <h2>Total CA</h2>
-            <p><?php echo number_format((float)$totalCA, 3); ?> €</p>
+            <p><?php echo number_format((float)$totalCA, 3); ?> Tnd</p>
         </div>
 
         <div class="card full-width-card">
@@ -197,7 +197,7 @@ $contractsByYear = $model->getContractsByPeriod('year');
                         'rgba(75, 192, 192, 1)',
                         'rgba(153, 102, 255, 1)',
                     ],
-                    borderWidth: 1
+                    borderWidth: 2
                 }]
             },
             options: {
