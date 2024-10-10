@@ -19,54 +19,110 @@ class UserController
     }
 
     // Filter users
-    public function filterUsers($filters = [])
-    {
-        // Base query
-        $sql = "SELECT * FROM users WHERE 1=1";
-        $db = config::getConnexion();
-        $params = [];
+    public function filterUsers($filters = [], $limit, $offset = 0)
+{
+    // Base query
+    $sql = "SELECT * FROM users WHERE 1=1";
+    $db = config::getConnexion();
+    $params = [];
 
-        // Apply filters
-        if (!empty($filters['username'])) {
-            $sql .= " AND username LIKE :username"; // Change to LIKE for partial matching
-            $params[':username'] = "%" . $filters['username'] . "%"; // Use wildcards for partial match
-        }
-        if (!empty($filters['role'])) {
-            $sql .= " AND role = :role";
-            $params[':role'] = $filters['role'];
-        }
-        // Nom filter using LIKE
-        if (!empty($filters['nom'])) {
-            $sql .= " AND nom LIKE :nom";
-            $params[':nom'] = '%' . $filters['nom'] . '%'; // Wildcards for partial match
-        }
-
-        // Prenom filter using LIKE
-        if (!empty($filters['prenom'])) {
-            $sql .= " AND prenom LIKE :prenom";
-            $params[':prenom'] = '%' . $filters['prenom'] . '%'; // Wildcards for partial match
-        }
-
-        if (!empty($filters['cin'])) {
-            $sql .= " AND cin LIKE :cin"; // Change to LIKE for partial matching
-            $params[':cin'] = "%" . $filters['cin'] . "%"; // Use wildcards for partial match
-        }
-        if (!empty($filters['date_of_birth'])) {
-            $sql .= " AND date_of_birth = :date_of_birth";
-            $params[':date_of_birth'] = $filters['date_of_birth'];
-        }
-
-        // Apply sorting
-        $sql = $this->applySorting($sql, $filters['sort_by'] ?? '', $filters['order'] ?? 'asc');
-
-        try {
-            $stmt = $db->prepare($sql);
-            $stmt->execute($params);
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            die('Error: ' . $e->getMessage());
-        }
+    // Apply filters
+    if (!empty($filters['username'])) {
+        $sql .= " AND username LIKE :username";
+        $params[':username'] = "%" . $filters['username'] . "%";
     }
+    if (!empty($filters['role'])) {
+        $sql .= " AND role = :role";
+        $params[':role'] = $filters['role'];
+    }
+    if (!empty($filters['nom'])) {
+        $sql .= " AND nom LIKE :nom";
+        $params[':nom'] = '%' . $filters['nom'] . '%';
+    }
+    if (!empty($filters['prenom'])) {
+        $sql .= " AND prenom LIKE :prenom";
+        $params[':prenom'] = '%' . $filters['prenom'] . '%';
+    }
+    if (!empty($filters['cin'])) {
+        $sql .= " AND cin LIKE :cin";
+        $params[':cin'] = "%" . $filters['cin'] . "%";
+    }
+    if (!empty($filters['date_of_birth'])) {
+        $sql .= " AND date_of_birth = :date_of_birth";
+        $params[':date_of_birth'] = $filters['date_of_birth'];
+    }
+
+    // Apply sorting
+    $sql = $this->applySorting($sql, $filters['sort_by'] ?? '', $filters['order'] ?? 'asc');
+
+    // Add pagination with LIMIT and OFFSET in the SQL query directly
+    $sql .= " LIMIT :limit OFFSET :offset";
+
+    try {
+        $stmt = $db->prepare($sql);
+
+        // Bind the limit and offset as integers for pagination
+        $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
+
+        // Bind other filter parameters
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        die('Error: ' . $e->getMessage());
+    }
+}
+
+    public function getTotalUsers($filters = [])
+{
+    // Base query for counting users
+    $sql = "SELECT COUNT(*) as total FROM users WHERE 1=1";
+    $db = config::getConnexion();
+    $params = [];
+
+    // Apply filters
+    if (!empty($filters['username'])) {
+        $sql .= " AND username LIKE :username";
+        $params[':username'] = "%" . $filters['username'] . "%";
+    }
+    if (!empty($filters['role'])) {
+        $sql .= " AND role = :role";
+        $params[':role'] = $filters['role'];
+    }
+    if (!empty($filters['nom'])) {
+        $sql .= " AND nom LIKE :nom";
+        $params[':nom'] = '%' . $filters['nom'] . '%';
+    }
+    if (!empty($filters['prenom'])) {
+        $sql .= " AND prenom LIKE :prenom";
+        $params[':prenom'] = '%' . $filters['prenom'] . '%';
+    }
+    if (!empty($filters['cin'])) {
+        $sql .= " AND cin LIKE :cin";
+        $params[':cin'] = "%" . $filters['cin'] . "%";
+    }
+    if (!empty($filters['date_of_birth'])) {
+        $sql .= " AND date_of_birth = :date_of_birth";
+        $params[':date_of_birth'] = $filters['date_of_birth'];
+    }
+
+    try {
+        $stmt = $db->prepare($sql);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'] ?? 0;
+    } catch (Exception $e) {
+        die('Error: ' . $e->getMessage());
+    }
+}
+
 
     // Add new user
     public function addUser($username, $nom, $prenom, $email, $numtelephone, $password, $role, $date_of_birth, $cin, $photo)

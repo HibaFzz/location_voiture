@@ -13,9 +13,18 @@ $filters = [
     'sort_by' => $_GET['sort_by'] ?? '',
     'order' => $_GET['order'] ?? 'asc'
 ];
-
+$limit = 9;
+$page = $_GET['page'] ?? 1; // Get the current page or set to 1 if not defined
+$offset = ($page - 1) * $limit; // Calculate offset for SQL query
 // Use filterUsers method
-$users = $userController->filterUsers($filters);
+$users = $userController->filterUsers($filters,$limit,$offset);
+$totalUsers = $userController->getTotalUsers($filters);
+// Calculate total pages for pagination
+$totalPages = ceil($totalUsers / $limit);
+echo "Total Cars: " . $totalUsers . "\n";
+foreach ($users as $car) {
+    echo "User: " . $car['nom'] . "\n";
+}
 ?>
 
 <!DOCTYPE html>
@@ -219,6 +228,25 @@ $users = $userController->filterUsers($filters);
         </div>
         
     </div>
+    <nav aria-label="Page navigation">
+            <ul class="pagination justify-content-center mt-4">
+                <li class="page-item <?= $page == 1 ? 'disabled' : ''; ?>">
+                    <a class="page-link" href="?page=<?= $page - 1; ?>&<?= http_build_query($filters); ?>" aria-label="Previous">
+                        <span aria-hidden="true">&laquo;</span>
+                    </a>
+                </li>
+                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                    <li class="page-item <?= $page == $i ? 'active' : ''; ?>">
+                        <a class="page-link" href="?page=<?= $i; ?>&<?= http_build_query($filters); ?>"><?= $i; ?></a>
+                    </li>
+                <?php endfor; ?>
+                <li class="page-item <?= $page == $totalPages ? 'disabled' : ''; ?>">
+                    <a class="page-link" href="?page=<?= $page + 1; ?>&<?= http_build_query($filters); ?>" aria-label="Next">
+                        <span aria-hidden="true">&raquo;</span>
+                    </a>
+                </li>
+            </ul>
+        </nav>
     <a href="add_user.php" style="display: block; text-align: center; background-color: #007BFF; color: white; padding: 10px; border-radius: 5px; text-decoration: none; width: 150px; margin: 20px auto;">Add New User</a>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
