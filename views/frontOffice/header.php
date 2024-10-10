@@ -13,7 +13,7 @@
 	          <li class="nav-item"><a href="#" class="nav-link">About</a></li>
 	          <li class="nav-item"><a href="list_contracts.php" class="nav-link">Contracts</a></li>
 	          <li class="nav-item"><a href="list_cars.php" class="nav-link">Cars</a></li>
-	          <li class="nav-item"><a href="list_users.php" class="nav-link">Users</a></li>
+	          <li class="nav-item"><a href="user_list.php" class="nav-link">Users</a></li>
 	          <li class="nav-item"><a href="#" class="nav-link">Contact</a></li>
 	        </ul>
 	      </div>

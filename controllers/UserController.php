@@ -35,6 +35,18 @@ class UserController
             $sql .= " AND role = :role";
             $params[':role'] = $filters['role'];
         }
+        // Nom filter using LIKE
+        if (!empty($filters['nom'])) {
+            $sql .= " AND nom LIKE :nom";
+            $params[':nom'] = '%' . $filters['nom'] . '%'; // Wildcards for partial match
+        }
+
+        // Prenom filter using LIKE
+        if (!empty($filters['prenom'])) {
+            $sql .= " AND prenom LIKE :prenom";
+            $params[':prenom'] = '%' . $filters['prenom'] . '%'; // Wildcards for partial match
+        }
+
         if (!empty($filters['cin'])) {
             $sql .= " AND cin LIKE :cin"; // Change to LIKE for partial matching
             $params[':cin'] = "%" . $filters['cin'] . "%"; // Use wildcards for partial match

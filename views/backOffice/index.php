@@ -85,7 +85,7 @@
                             <ul class="submenu-angle" aria-expanded="true">
                                 <li><a title="Dashboard v.1" href="dashboard.php"><span class="mini-sub-pro">Statistics</span></a></li>
                                 <li><a title="Dashboard v.2" href="list_cars.php"><span class="mini-sub-pro">Cars</span></a></li>
-                                <li><a title="Dashboard v.3" href="list_contracts.php"><span class="mini-sub-pro">Contracts</span></a></li>
+                                <li><a title="Dashboard v.3" href="user_list.php"><span class="mini-sub-pro">Contracts</span></a></li>
                                 <li><a title="Dashboard v.3" href="analytics.html"><span class="mini-sub-pro">Users</span></a></li>
                             </ul>
                         </li>
