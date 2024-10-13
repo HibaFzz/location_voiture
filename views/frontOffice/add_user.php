@@ -147,7 +147,6 @@ if (!empty($errors)) {
             background-color: #f7f9fc;
             color: #333;
             margin: 0;
-            padding: 20px;
         }
 
         h1 {
@@ -270,6 +269,7 @@ if (!empty($errors)) {
     </style>
 </head>
 <body>
+<div style="padding-top: 100px;">
     <h2>Add A New User</h2>
 
     <!-- Display errors if any exist -->
@@ -303,7 +303,7 @@ if (!empty($errors)) {
 
                 <div class="form-group">
                     <label for="email">Email:</label>
-                    <input type="email" name="email" id="email" required>
+                    <input type="text" name="email" id="email" required>
                 </div>
 
                 <div class="form-group">

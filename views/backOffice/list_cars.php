@@ -1,5 +1,8 @@
 <?php
 include '../../controllers/CarController.php';
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['admin']);
+
 
 $carsController = new CarController();
 

@@ -1,5 +1,8 @@
 <?php
+
 include '../../controllers/UserController.php';
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['admin']);
 
 $userController = new UserController();
 $filters = [
@@ -14,13 +17,22 @@ $filters = [
     'order' => $_GET['order'] ?? 'asc'
 ];
 
+$limit = 9;
+$page = $_GET['page'] ?? 1; // Get the current page or set to 1 if not defined
+$offset = ($page - 1) * $limit; // Calculate offset for SQL query
 // Use filterUsers method
-$users = $userController->filterUsers($filters);
+$users = $userController->filterUsers($filters, $limit, $offset);
+$totalUsers = $userController->getTotalUsers($filters);
+// Calculate total pages for pagination
+$totalPages = ceil($totalUsers / $limit);
+echo "Total Users: " . $totalUsers . "\n";
+foreach ($users as $user) {
+    echo "User: " . $user['nom'] . "\n";
+}
 ?>
 
 <!DOCTYPE html>
 <html lang="en">
-<?php include('header.php'); ?>
 <head>
     <meta charset="UTF-8">
     <title>List of Users</title>
@@ -128,9 +140,11 @@ $users = $userController->filterUsers($filters);
                 max-width: none;
             }
         }
+        
     </style>
 </head>
 <body>
+<?php include('index.php'); ?>
 <div style="padding-top: 100px;">
 <h1 class="text-center text-primary mb-4">List of Users</h1>
 
@@ -193,32 +207,52 @@ $users = $userController->filterUsers($filters);
                         <?php endif; ?>
                     </div>
                     <p><strong>Name:</strong> <?= $user['nom'] . ' ' . $user['prenom']; ?></p>
-                    <p><strong>Role:</strong> <span class="badge badge-<?php echo match($user['role']) { 'admin' => 'danger', 'agent' => 'primary', 'client' => 'success', default => 'secondary' }; ?>">
-                        <?= ucfirst($user['role']); ?></span></p>
+                    <p><strong>Role:</strong>
+                    <span class="badge 
+                        <?= $user['role'] === 'admin' ? 'badge-danger' : 
+                            ($user['role'] === 'agent' ? 'badge-primary' : 
+                            ($user['role'] === 'client' ? 'badge-success' : 'badge-warning')) ?>"
+                        style="background-color: 
+                        <?= $user['role'] === 'admin' ? '#dc3545' : 
+                            ($user['role'] === 'agent' ? '#007bff' : 
+                            ($user['role'] === 'client' ? '#28a745' : '#ffc107')) ?>;">
+                        <?= ucfirst($user['role']); ?>
+                    </span>
+
+
+
                     <div class="actions">
-                        <form method="get" action="view_user.php" style="display:inline;">
-                            <input type="hidden" name="id" value="<?= $user['id']; ?>">
-                            <button type="submit" class="btn btn-outline-info btn-sm">View</button>
-                        </form>
-                        
-                        <form method="get" action="update_user.php" style="display:inline;">
-                            <input type="hidden" name="id" value="<?= $user['id']; ?>">
-                            <button type="submit" class="btn btn-outline-warning btn-sm">Edit</button>
-                        </form>
-                        
-                        <form method="post" action="delete_user.php" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
-                            <input type="hidden" name="id" value="<?= $user['id']; ?>">
-                            <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-                        </form>
+                        <a href="view_user.php?id=<?= $user['id']; ?>" class="btn btn-info">View</a>
+                        <a href="edit_user.php?id=<?= $user['id']; ?>" class="btn btn-warning">Edit</a>
+                        <a href="delete_user.php?id=<?= $user['id']; ?>" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
                     </div>
                 </div>
             <?php endforeach; ?>
         </div>
     </div>
 
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <div style="text-align: center; margin-top: 20px;">
+        <nav>
+            <ul class="pagination">
+                <li class="page-item <?= ($page <= 1) ? 'disabled' : ''; ?>">
+                    <a class="page-link" href="?page=<?= $page - 1; ?>&<?= http_build_query($filters); ?>">Previous</a>
+                </li>
+                <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                    <li class="page-item <?= ($i === (int)$page) ? 'active' : ''; ?>">
+                        <a class="page-link" href="?page=<?= $i; ?>&<?= http_build_query($filters); ?>"><?= $i; ?></a>
+                    </li>
+                <?php endfor; ?>
+                <li class="page-item <?= ($page >= $totalPages) ? 'disabled' : ''; ?>">
+                    <a class="page-link" href="?page=<?= $page + 1; ?>&<?= http_build_query($filters); ?>">Next</a>
+                </li>
+            </ul>
+        </nav>
+    </div>
+    
+    <div style="text-align: center; margin-top: 20px;">
+    <a href="add_user.php" style="display: block; text-align: center; background-color: #007BFF; color: white; padding: 10px; border-radius: 5px; text-decoration: none; width: 150px; margin: 20px auto;">Add New User</a>
+    </div>
+
+</div>
 </body>
-<?php include('footer.php'); ?>
 </html>

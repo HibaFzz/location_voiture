@@ -1,4 +1,8 @@
+
 <?php
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['client','agent']);
+
 include '../../controllers/CarController.php';
 
 $carsController = new CarController();
@@ -34,10 +38,6 @@ $cars = $carsController->filterCars($filters,$limit, $offset);
 $totalContracts = $carsController->getTotalCarsCount($filters);
 // Calculate total pages for pagination
 $totalPages = ceil($totalContracts / $limit);
-echo "Total Cars: " . $totalContracts . "\n";
-foreach ($cars as $car) {
-    echo "Car: " . $car['vehicletitle'] . "\n";
-}
 
 $message = ""; // Initialize message variable
 
@@ -65,7 +65,7 @@ if ($user_id === null) {
 if ($car_id === null) {
     $message = "Car ID is not set.";
 }
-
+$currentUser = AuthController::getCurrentUser();
 
 
 ?>
@@ -384,21 +384,24 @@ if ($car_id === null) {
 
                         <p>Year: <?= $car['modelyear']; ?></p>
                         <div class="actions">
-                        <a href="view_car.php?id=<?= $car['id']; ?>" class="btn btn-outline-info action-button view">View</a>
-                        <?php if ($car['disponible'] === 1): ?>
-                            <a href="#" class="btn btn-outline-success action-button book-now" 
-                            data-toggle="modal" 
-                            data-target="#bookingModal" 
-                            data-user_id="4" 
-                            data-car_id="<?= $car['id']; ?>" 
-                            data-car_title="<?= $car['vehicletitle']; ?>" 
-                            data-price_per_day="<?= $car['priceperday']; ?>">
-                                Book now
-                            </a>
-                        <?php endif; ?><hr>
-                        <a href="update_car.php?id=<?= $car['id']; ?>" class="btn btn-outline-warning action-button">Update</a> |
-                        <a href="delete_car.php?id=<?= $car['id']; ?>" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to delete this car?');">Delete</a>
-                    </div>
+                            <a href="view_car.php?id=<?= $car['id']; ?>" class="btn btn-outline-info action-button view">View</a>
+                            <?php if ($car['disponible'] === 1 && $currentUser['role']=== 'client'): ?>
+                                <a href="#" class="btn btn-outline-success action-button book-now" 
+                                data-toggle="modal" 
+                                data-target="#bookingModal" 
+                                data-user_id="4" 
+                                data-car_id="<?= $car['id']; ?>" 
+                                data-car_title="<?= $car['vehicletitle']; ?>" 
+                                data-price_per_day="<?= $car['priceperday']; ?>">
+                                    Book now
+                                </a>
+                            <?php endif; ?>
+                            <hr>
+                            <?php if ($currentUser['role'] === 'agent'): ?>
+                                <a href="update_car.php?id=<?= $car['id']; ?>" class="btn btn-outline-warning action-button">Update</a> |
+                                <a href="delete_car.php?id=<?= $car['id']; ?>" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to delete this car?');">Delete</a>
+                            <?php endif; ?>
+                        </div>
                     </div>
 
                 <?php endforeach; ?>
@@ -428,8 +431,9 @@ if ($car_id === null) {
                 </li>
             </ul>
         </nav>
-    <a href="add_car.php" style="display: block; text-align: center; background-color: #007BFF; color: white; padding: 10px; border-radius: 5px; text-decoration: none; width: 150px; margin: 20px auto;">Add New Car</a>
-
+    <?php if ($currentUser['role'] === 'agent'): ?>
+        <a href="add_car.php" style="display: block; text-align: center; background-color: #007BFF; color: white; padding: 10px; border-radius: 5px; text-decoration: none; width: 150px; margin: 20px auto;">Add New Car</a>
+    <?php endif?>
     <div>
         <?php include('footer.php'); ?>
     </div>

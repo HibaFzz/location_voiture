@@ -1,4 +1,6 @@
 <?php
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['client','agent']);
 include '../../controllers/UserController.php';
 
 $userController = new UserController();
@@ -19,7 +21,6 @@ if ($userId) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <?php include('header.php'); ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile</title>
@@ -28,14 +29,16 @@ if ($userId) {
         body {
             font-family: 'Roboto', sans-serif;
             background-color: #f1f3f5;
-            margin: 0;
-            padding: 0;
             color: #333;
         }
-        .container {
+        .container1{
             max-width: 1100px;
             margin: 50px auto;
             padding: 20px;
+            background-color: #fff;
+            border-radius: 12px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
         }
         h1 {
             text-align: center;
@@ -113,7 +116,10 @@ if ($userId) {
         }
     </style>
 </head>
+<?php include('header.php'); ?>
+
 <body>
+<div style="padding-top: 100px;">
     <div class="container">
         <h1>User Information</h1>
         <div class="profile-card">

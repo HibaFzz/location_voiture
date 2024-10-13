@@ -1,131 +1,113 @@
 <?php
-include '../../controllers/UserController.php'; // Ensure this path is correct
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['client','agent']);
+include '../../controllers/UserController.php';
 
 $userController = new UserController();
-$errors = []; // Initialize an array to hold error messages
-$uploadOk = 1; // Variable to track if the upload should proceed
+$errors = [];
+$uploadOk = 1;
 
-// Check if the form is submitted
+// Check if an ID is provided
+if (isset($_GET['id'])) {
+    // Fetch the user by ID
+    $user = $userController->getUserById($_GET['id']);
+    
+    // If no user is found, redirect to the user list
+    if (!$user) {
+        header('Location: user_list.php'); // Redirect if not found
+        exit();
+    }
+} else {
+    die("User ID not provided.");
+}
+
+// Handle form submission
 if (isset($_POST['submit'])) {
-    // Get input values
-    $userId = $_POST['user_id']; // Assume the user ID is passed via a hidden field
+    $userId = $_POST['user_id'];
     $username = trim($_POST['username']);
-    $nom = trim($_POST['nom']); // Added nom
-    $prenom = trim($_POST['prenom']); // Added prenom
+    $nom = trim($_POST['nom']);
+    $prenom = trim($_POST['prenom']);
     $email = trim($_POST['email']);
     $numtelephone = trim($_POST['numtelephone']);
     $password = trim($_POST['password']);
+    $confirm_password = trim($_POST['confirm_password']);
     $role = trim($_POST['role']);
     $date_of_birth = trim($_POST['date_of_birth']);
     $cin = trim($_POST['cin']);
     
-    // Validate username
-    if (empty($username)) {
-        $errors[] = "Username is required.";
-    }
-
-    // Validate nom
-    if (empty($nom)) {
-        $errors[] = "Nom is required.";
-    }
-
-    // Validate prenom
-    if (empty($prenom)) {
-        $errors[] = "Prenom is required.";
-    }
-
+    // Validate input fields
+    if (empty($username)) $errors['username'] = "Username is required.";
+    if (empty($nom)) $errors['nom'] = "First name is required.";
+    if (empty($prenom)) $errors['prenom'] = "Last name is required.";
+    
     // Validate email
     if (empty($email) || !filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $errors[] = "A valid email is required.";
+        $errors['email'] = "A valid email is required.";
+    }
+    
+    // Validate phone number (must be 10 digits)
+    if (empty($numtelephone)) {
+        $errors['numtelephone'] = "Phone number is required.";
+    } elseif (!preg_match('/^[0-9]{10}$/', $numtelephone)) {
+        $errors['numtelephone'] = "Phone number must be 10 digits.";
     }
 
-    // Validate phone number (assuming it should be numeric)
-    if (empty($numtelephone) || !preg_match('/^[0-9]{10}$/', $numtelephone)) {
-        $errors[] = "A valid phone number (10 digits) is required.";
+    // Password validation: Only change password if fields are not empty
+    if (!empty($password)) {
+        if (empty($confirm_password)) {
+            $errors['confirm_password'] = "Please confirm your password.";
+        } elseif ($password !== $confirm_password) {
+            $errors['confirm_password'] = "Passwords do not match.";
+        } else {
+            $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+        }
     }
 
-    // Validate password
-    if (empty($password)) {
-        $errors[] = "Password is required.";
-    }
+    if (empty($role)) $errors['role'] = "Role is required.";
+    if (empty($date_of_birth)) $errors['date_of_birth'] = "Date of birth is required.";
+    if (empty($cin) || !is_numeric($cin)) $errors['cin'] = "A valid CIN is required.";
 
-    // Validate role
-    if (empty($role)) {
-        $errors[] = "Role is required.";
-    }
-
-    // Validate date of birth
-    if (empty($date_of_birth)) {
-        $errors[] = "Date of birth is required.";
-    }
-
-    // Validate CIN
-    if (empty($cin) || !is_numeric($cin)) {
-        $errors[] = "A valid CIN is required.";
-    }
-
-    // Handle the photo upload if a file is uploaded
-    $target_file = ""; // Default to an empty string
+    // Handle photo upload
+    $target_file = $user['photo']; // Default to existing photo if none is uploaded
     if (isset($_FILES["photo"]) && $_FILES["photo"]["error"] !== UPLOAD_ERR_NO_FILE) {
         $target_dir = "uploads/";
         $target_file = $target_dir . basename($_FILES["photo"]["name"]);
         $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
 
-        // Validate the image
-        if ($_FILES["photo"]["error"] !== UPLOAD_ERR_OK) {
-            $errors[] = "Image upload failed with error code: " . $_FILES["photo"]["error"];
+        // Validate image upload
+        $check = getimagesize($_FILES["photo"]["tmp_name"]);
+        if ($check === false) {
+            $errors['photo'] = "File is not an image.";
             $uploadOk = 0;
-        } else {
-            $check = getimagesize($_FILES["photo"]["tmp_name"]);
-            if ($check === false) {
-                $errors[] = "File is not an image.";
-                $uploadOk = 0;
-            }
-        }
-
-        // Other validations (size, format, etc.)
-        if ($_FILES["photo"]["size"] > 500000) {
-            $errors[] = "Sorry, your file is too large.";
+        } elseif ($_FILES["photo"]["size"] > 500000) {
+            $errors['photo'] = "Sorry, your file is too large.";
             $uploadOk = 0;
-        }
-
-        if (!in_array($imageFileType, ['jpg', 'jpeg', 'png', 'gif'])) {
-            $errors[] = "Only JPG, JPEG, PNG, and GIF files are allowed.";
+        } elseif (!in_array($imageFileType, ['jpg', 'jpeg', 'png', 'gif'])) {
+            $errors['photo'] = "Sorry, only JPG, JPEG, PNG & GIF files are allowed.";
             $uploadOk = 0;
-        }
-
-        // If no errors, move the uploaded file
-        if ($uploadOk == 1 && empty($errors)) {
-            if (!is_dir($target_dir)) {
-                mkdir($target_dir, 0755, true);
-            }
-
-            if (!move_uploaded_file($_FILES["photo"]["tmp_name"], $target_file)) {
-                $errors[] = "Sorry, there was an error uploading your file.";
-            }
+        } elseif (!move_uploaded_file($_FILES["photo"]["tmp_name"], $target_file)) {
+            $errors['photo'] = "There was an error uploading your photo.";
+            $uploadOk = 0;
         }
     }
 
-    // If there are no errors, proceed to update the user
+    // If no errors, update user information
     if (empty($errors)) {
-        // Update the user in the database
-        $userController->updateUser($userId, $username, $nom, $prenom, $email, $numtelephone, $password, $role, $date_of_birth, $cin, $target_file);
-
-        // Redirect to the list of users after successful update
+        $userController->updateUser(
+            $userId,
+            $username,
+            $nom,
+            $prenom,
+            !empty($password) ? $hashed_password : $user['password'], // Use hashed password if provided, else keep old password
+            $email,
+            $numtelephone,
+            $role,
+            $date_of_birth,
+            $cin,
+            $target_file
+        );
         header('Location: user_list.php');
         exit();
-    }
-}
-
-// Fetch the user data for the form (assuming user ID is passed in the URL)
-if (isset($_GET['id'])) {
-    $user = $userController->getUserById($_GET['id']); // Fetch user data from the controller
-}
-
-// Display errors (if any)
-if (!empty($errors)) {
-    foreach ($errors as $error) {
-        echo "<p>$error</p>";
     }
 }
 ?>
@@ -133,63 +115,156 @@ if (!empty($errors)) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    <?php include('header.php'); ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Update User</title>
+    <style>
+        body { font-family: 'Arial', sans-serif; background-color: #f7f9fc; color: #333; margin: 0;  }
+        h2 { text-align: center; color: #007bff; font-size: 2em; margin-bottom: 20px; }
+        form { background-color: #ffffff; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1); margin: auto; max-width: 900px; }
+        .form-section { display: flex; justify-content: space-between; margin: 20px 0; }
+        .section { flex: 1; min-width: 300px; max-width: 400px; padding: 0 10px; }
+        .section-title { font-size: 1.5em; color: #007bff; margin-bottom: 15px; border-bottom: 2px solid #007bff; padding-bottom: 5px; }
+        .form-group { display: flex; margin-bottom: 15px; }
+        .form-group label { flex-basis: 35%; margin-right: 10px; font-weight: bold; }
+        .form-group input[type="text"], .form-group input[type="email"], .form-group input[type="password"], .form-group input[type="date"], .form-group select, .form-group input[type="file"] { flex-basis: 60%; padding: 8px; border: 1px solid #007bff; border-radius: 4px; }
+        input[type="submit"] { background-color: #007bff; color: white; border: none; border-radius: 4px; padding: 10px 20px; cursor: pointer; font-size: 16px; margin-top: 10px; width: 100%; }
+        input[type="submit"]:hover { background-color: #0056b3; }
+        .return-link { text-align: center; margin-top: 20px; font-size: 1.2em; }
+        .return-link a { color: #007bff; text-decoration: none; }
+        .return-link a:hover { text-decoration: underline; }
+        .error-message { color: red; margin-bottom: 20px; }
+        .current-photo { margin-bottom: 15px; }
+        .current-photo img { max-width: 150px; max-height: 150px; border-radius: 8px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); }
+        @media (max-width: 600px) { .form-section { flex-direction: column; } .form-group { flex-direction: column; align-items: flex-start; } }
+    </style>
 </head>
 <body>
-    <h1>Update User</h1>
+<div style="padding-top: 100px;">
+    <h2>Update User</h2>
 
-    <!-- Display errors if any exist -->
+    <!-- Display all error messages at the top -->
     <?php if (!empty($errors)): ?>
-        <div style="color: red;">
+        <div class="error-message">
             <?php foreach ($errors as $error): ?>
-                <p><?php echo $error; ?></p>
+                <p><?= htmlspecialchars($error); ?></p>
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
 
-    <!-- Form to update user -->
     <form action="" method="POST" enctype="multipart/form-data">
-        <input type="hidden" name="user_id" value="<?= $user['id']; ?>">
+        <input type="hidden" name="user_id" value="<?= htmlspecialchars($user['id']); ?>">
 
-        <label for="username">Username:</label><br>
-        <input type="text" name="username" id="username" value="<?= $user['username']; ?>" required><br><br>
+        <div class="form-section">
+            <div class="section">
+                <div class="section-title">User Information</div>
+                <div class="form-group">
+                    <label for="username">Username:</label>
+                    <input type="text" name="username" id="username" value="<?= htmlspecialchars($user['username']); ?>" >
+                    <?php if (!empty($errors['username'])): ?>
+                        <div class="error-message"><?= htmlspecialchars($errors['username']); ?></div>
+                    <?php endif; ?>
+                </div>
+                <div class="form-group">
+                    <label for="nom">First Name:</label>
+                    <input type="text" name="nom" id="nom" value="<?= htmlspecialchars($user['nom']); ?>" >
+                    <?php if (!empty($errors['nom'])): ?>
+                        <div class="error-message"><?= htmlspecialchars($errors['nom']); ?></div>
+                    <?php endif; ?>
+                </div>
+                <div class="form-group">
+                    <label for="prenom">Last Name:</label>
+                    <input type="text" name="prenom" id="prenom" value="<?= htmlspecialchars($user['prenom']); ?>" >
+                    <?php if (!empty($errors['prenom'])): ?>
+                        <div class="error-message"><?= htmlspecialchars($errors['prenom']); ?></div>
+                    <?php endif; ?>
+                </div>
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" name="email" id="email" value="<?= htmlspecialchars($user['email']); ?>" >
+                    <?php if (!empty($errors['email'])): ?>
+                        <div class="error-message"><?= htmlspecialchars($errors['email']); ?></div>
+                    <?php endif; ?>
+                </div>
 
-        <label for="nom">Nom:</label><br>
-        <input type="text" name="nom" id="nom" value="<?= $user['nom']; ?>" required><br><br>
+                <div class="form-group">
+                    <label for="photo">Upload New Photo:</label>
+                    <input type="file" name="photo" id="photo">
+                    <?php if (!empty($errors['photo'])): ?>
+                        <div class="error-message"><?= htmlspecialchars($errors['photo']); ?></div>
+                    <?php endif; ?>
+                </div>
+                <div class="current-photo">
+                    <?php if (!empty($user['photo'])): ?>
+                        <p>Current Photo:</p>
+                        <img src="<?= htmlspecialchars($user['photo']); ?>" alt="User Photo">
+                    <?php endif; ?>
+                </div>
+                
+                
+            </div>
+            
+            <div class="section">
+                <div class="section-title">Security & Role</div>
+                <div class="form-group">
+                    <label for="password">Password:</label>
+                    <input type="password" name="password" id="password" >
+                </div>
+                <div class="form-group">
+                    <label for="confirm_password">Confirm Password:</label>
+                    <input type="password" name="confirm_password" id="confirm_password" >
+                    <?php if (!empty($errors['confirm_password'])): ?>
+                        <div class="error-message"><?= htmlspecialchars($errors['confirm_password']); ?></div>
+                    <?php endif; ?>
+                </div>
+                <div class="form-group">
+                    <label for="role">Role:</label>
+                    <select name="role" id="role">
+                        <option value="">--Select Role--</option>
+                        <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : ''; ?>>Admin</option>
+                        <option value="agent" <?= $user['role'] === 'agent' ? 'selected' : ''; ?>>Agent</option>
+                        <option value="client" <?= $user['role'] === 'client' ? 'selected' : ''; ?>>Client</option>
+                    </select>
+                    <?php if (!empty($errors['role'])): ?>
+                        <div class="error-message"><?= htmlspecialchars($errors['role']); ?></div>
+                    <?php endif; ?>
+                </div>
+                <div class="form-group">
+                    <label for="cin">CIN:</label>
+                    <input type="text" name="cin" id="cin" value="<?= htmlspecialchars($user['cin']); ?>" >
+                    <?php if (!empty($errors['cin'])): ?>
+                        <div class="error-message"><?= htmlspecialchars($errors['cin']); ?></div>
+                    <?php endif; ?>
+                </div>
+                <div class="form-group">
+                    <label for="date_of_birth">Date of Birth:</label>
+                    <input type="date" name="date_of_birth" id="date_of_birth" value="<?= htmlspecialchars($user['date_of_birth']); ?>">
+                    <?php if (!empty($errors['date_of_birth'])): ?>
+                        <div class="error-message"><?= htmlspecialchars($errors['date_of_birth']); ?></div>
+                    <?php endif; ?>
+                </div>
+                <div class="form-group">
+                    <label for="numtelephone">Phone Number:</label>
+                    <input type="text" name="numtelephone" id="numtelephone" value="<?= htmlspecialchars($user['numtelephone']); ?>" >
+                    <?php if (!empty($errors['numtelephone'])): ?>
+                        <div class="error-message"><?= htmlspecialchars($errors['numtelephone']); ?></div>
+                    <?php endif; ?>
+                </div>
 
-        <label for="prenom">Prenom:</label><br>
-        <input type="text" name="prenom" id="prenom" value="<?= $user['prenom']; ?>" required><br><br>
-
-        <label for="email">Email:</label><br>
-        <input type="email" name="email" id="email" value="<?= $user['email']; ?>" required><br><br>
-
-        <label for="numtelephone">Phone Number:</label><br>
-        <input type="text" name="numtelephone" id="numtelephone" value="<?= $user['numtelephone']; ?>"><br><br>
-
-        <label for="password">Password:</label><br>
-        <input type="password" name="password" id="password" required><br><br>
-
-        <label for="role">Role:</label><br>
-        <select name="role" id="role" required>
-            <option value="admin" <?= $user['role'] === 'admin' ? 'selected' : '' ?>>Admin</option>
-            <option value="client" <?= $user['role'] === 'client' ? 'selected' : '' ?>>Client</option>
-            <option value="agent" <?= $user['role'] === 'agent' ? 'selected' : '' ?>>Agent</option>
-        </select><br><br>
-
-        <label for="date_of_birth">Date of Birth:</label><br>
-        <input type="date" name="date_of_birth" id="date_of_birth" value="<?= $user['date_of_birth']; ?>" required><br><br>
-
-        <label for="cin">CIN:</label><br>
-        <input type="text" name="cin" id="cin" value="<?= $user['cin']; ?>" required><br><br>
-
-        <label for="photo">Profile Photo (Optional):</label><br>
-        <input type="file" name="photo" id="photo" accept="image/*"><br><br>
+                <!-- Display current photo -->
+               
+            </div>
+        </div>
 
         <input type="submit" name="submit" value="Update User">
     </form>
-    <br>
-    <a href="user_list.php">Back to User List</a>
+
+    <div class="return-link">
+        <a href="user_list.php">Back to User List</a>
+    </div>
+</div>
+
+<?php include('footer.php'); ?>
 </body>
 </html>

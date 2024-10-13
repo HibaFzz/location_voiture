@@ -1,4 +1,6 @@
 <?php
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['client','agent']);
 include '../../controllers/UserController.php';
 
 $userController = new UserController();
@@ -21,10 +23,7 @@ $users = $userController->filterUsers($filters,$limit,$offset);
 $totalUsers = $userController->getTotalUsers($filters);
 // Calculate total pages for pagination
 $totalPages = ceil($totalUsers / $limit);
-echo "Total Cars: " . $totalUsers . "\n";
-foreach ($users as $car) {
-    echo "User: " . $car['nom'] . "\n";
-}
+
 ?>
 
 <!DOCTYPE html>

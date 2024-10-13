@@ -1,5 +1,9 @@
+
 <?php
 require_once '../../controllers/StatisticsController.php';
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['admin']);
+
 $model = new StatisticsController();
 
 // Fetch the statistics

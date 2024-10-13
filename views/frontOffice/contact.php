@@ -1,3 +1,22 @@
+<?php
+require_once '../../controllers/AuthController.php';
+// Check if a session is already active before starting a new session
+if (session_status() === PHP_SESSION_NONE) {
+    session_start(); // Start a session if not already active
+}
+
+// Check if logout is needed before any output
+if (isset($_GET['action']) && $_GET['action'] === 'logout') {
+    AuthController::logout(); // Call the logout method
+}
+
+$currentUser = AuthController::getCurrentUser();
+
+// Function to check if the current page is the active one
+function isActive($page) {
+    return basename($_SERVER['PHP_SELF']) === $page ? 'active' : '';
+}
+?>
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -25,6 +44,13 @@
     <link rel="stylesheet" href="css/flaticon.css">
     <link rel="stylesheet" href="css/icomoon.css">
     <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* CSS for the active state of the button */
+        .nav-item.active .nav-link {
+            font: #f96d00; /* Color when the button is active */
+            color: white; /* Text color change for contrast */
+        }
+    </style>
   </head>
   <body>
     
@@ -36,16 +62,42 @@
 	      </button>
 
 	      <div class="collapse navbar-collapse" id="ftco-nav">
-	        <ul class="navbar-nav ml-auto">
-	          <li class="nav-item"><a href="index.html" class="nav-link">Home</a></li>
-	          <li class="nav-item"><a href="about.html" class="nav-link">About</a></li>
-	          <li class="nav-item"><a href="services.html" class="nav-link">Services</a></li>
-	          <li class="nav-item"><a href="pricing.html" class="nav-link">Pricing</a></li>
-	          <li class="nav-item"><a href="car.html" class="nav-link">Cars</a></li>
-	          <li class="nav-item"><a href="blog.html" class="nav-link">Blog</a></li>
-	          <li class="nav-item active"><a href="contact.html" class="nav-link">Contact</a></li>
-	        </ul>
-	      </div>
+      <ul class="navbar-nav ml-auto">
+        <li class="nav-item <?= isActive('index.php'); ?>"><a href="index.php" class="nav-link">Home</a></li>
+        <li class="nav-item <?= isActive('about.php'); ?>"><a href="about.php" class="nav-link">About</a></li>
+        
+        <li class="nav-item <?= isActive('list_cars.php'); ?>"><a href="list_cars.php" class="nav-link">Cars</a></li>
+        <?php if ($currentUser['role'] === 'agent'): ?>
+          <li class="nav-item <?= isActive('list_contracts.php'); ?>"><a href="list_contracts.php" class="nav-link">Contracts</a></li>
+          <li class="nav-item <?= isActive('user_list.php'); ?>"><a href="user_list.php" class="nav-link">Users</a></li>
+        <?php endif; ?>
+        
+        <li class="nav-item <?= isActive('contact.php'); ?>"><a href="contact.php" class="nav-link">Contact</a></li>
+
+        <!-- User Profile Dropdown -->
+        <li class="nav-item dropdown">
+          <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+            <?php if ($currentUser): ?>
+              <!-- Display user image from uploads folder -->
+              <?php if (!empty($currentUser['photo'])): ?>
+                <img src="<?=$currentUser['photo']; ?>" alt="User Image" class="rounded-circle" style="width: 30px; height: 30px;">
+              <?php else: ?>
+                <img src="uploads/default.png" alt="Default User Image" class="rounded-circle" style="width: 30px; height: 30px;">
+              <?php endif; ?>
+              <?php echo $currentUser['prenom'] . ' ' . $currentUser['nom']; ?> <!-- Display first and last name -->
+            <?php else: ?>
+              Guest
+            <?php endif; ?>
+          </a>
+          <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
+            <a class="dropdown-item" href="history.php">Historique</a>
+            <a class="dropdown-item" href="history.php">My Contract</a>
+            <a class="dropdown-item" href="view_user.php">Profile</a>
+            <a class="dropdown-item" href="logout.php">Logout</a>
+          </div>
+        </li>
+      </ul>
+    </div>
 	    </div>
 	  </nav>
     <!-- END nav -->

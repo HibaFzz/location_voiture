@@ -1,4 +1,7 @@
+
 <?php
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['admin']);
 include '../../controllers/ContractController.php';
 
 // Now you can create an instance of ContractController

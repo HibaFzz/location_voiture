@@ -1,3 +1,7 @@
+<?php
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['admin']);
+?>
 <!doctype html>
 <html class="no-js" lang="en">
 
@@ -85,8 +89,8 @@
                             <ul class="submenu-angle" aria-expanded="true">
                                 <li><a title="Dashboard v.1" href="dashboard.php"><span class="mini-sub-pro">Statistics</span></a></li>
                                 <li><a title="Dashboard v.2" href="list_cars.php"><span class="mini-sub-pro">Cars</span></a></li>
-                                <li><a title="Dashboard v.3" href="user_list.php"><span class="mini-sub-pro">Contracts</span></a></li>
-                                <li><a title="Dashboard v.3" href="analytics.html"><span class="mini-sub-pro">Users</span></a></li>
+                                <li><a title="Dashboard v.3" href="list_contracts.php"><span class="mini-sub-pro">Contracts</span></a></li>
+                                <li><a title="Dashboard v.3" href="user_list.php"><span class="mini-sub-pro">Users</span></a></li>
                             </ul>
                         </li>
                         <li>
@@ -131,18 +135,20 @@
 															<span class="admin-name">Prof.Anderson</span>
 															<i class="fa fa-angle-down edu-icon edu-down-arrow"></i>
 														</a>
-                                                    <ul role="menu" class="dropdown-header-top author-log dropdown-menu animated zoomIn">
-                                                        <li><a href="#"><span class="edu-icon edu-home-admin author-log-ic"></span>My Account</a>
-                                                        </li>
-                                                        <li><a href="#"><span class="edu-icon edu-user-rounded author-log-ic"></span>My Profile</a>
-                                                        </li>
-                                                        <li><a href="#"><span class="edu-icon edu-money author-log-ic"></span>User Billing</a>
-                                                        </li>
-                                                        <li><a href="#"><span class="edu-icon edu-settings author-log-ic"></span>Settings</a>
-                                                        </li>
-                                                        <li><a href="#"><span class="edu-icon edu-locked author-log-ic"></span>Log Out</a>
-                                                        </li>
-                                                    </ul>
+                            <ul role="menu" class="dropdown-header-top author-log dropdown-menu animated zoomIn">
+                                <!-- Display the current user role -->
+                                <li><a href="my_account.php"><span class="edu-icon edu-home-admin author-log-ic"></span>My Account</a></li>
+                                <li><a href="profile.php"><span class="edu-icon edu-user-rounded author-log-ic"></span>My Profile</a></li>
+                                <li><a href="user_billing.php"><span class="edu-icon edu-money author-log-ic"></span>User Billing</a></li>
+                                <li><a href="settings.php"><span class="edu-icon edu-settings author-log-ic"></span>Settings</a></li>
+                                
+                                <!-- Add Historiques section -->
+                                <li><a href="historiques.php"><span class="edu-icon edu-course author-log-ic"></span>Historiques</a></li>
+
+                                <!-- Log out link -->
+                                <li><a href="../frontOffice/logout.php"><span class="edu-icon edu-locked author-log-ic"></span>Log Out</a></li>
+                            </ul>
+
                                                 </li>
                                                 <li class="nav-item nav-setting-open"><a href="#" data-toggle="dropdown" role="button" aria-expanded="false" class="nav-link dropdown-toggle"><i class="educate-icon educate-menu"></i></a>
 

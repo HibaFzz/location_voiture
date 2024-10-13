@@ -1,6 +1,6 @@
 <?php
 include '../../config/config.php';
-include '../../models/User.php';
+
 
 class UserController
 {
@@ -153,7 +153,7 @@ class UserController
     // Update user
     public function updateUser($id, $username, $nom, $prenom, $password, $email, $numtelephone, $role, $date_of_birth, $cin, $photo)
     {
-        $sql = "UPDATE users SET username = :username, nom = :nom, prenom = :prenom, email = :email, numtelephone = :numtelephone, password = :password, role = :role, date_of_birth = :date_of_birth, cin = :cin, photo = :photo WHERE id = :id";
+        $sql = "UPDATE users SET username = :username, nom = :nom, prenom = :prenom, password = :password, email = :email, numtelephone = :numtelephone,  role = :role, date_of_birth = :date_of_birth, cin = :cin, photo = :photo WHERE id = :id";
         $db = config::getConnexion();
 
         // Sanitize email separately
@@ -219,5 +219,62 @@ class UserController
         }
         return $sql;
     }
+    public function getUserByUsername($username)
+{
+    $sql = "SELECT * FROM users WHERE username = :username";
+    $db = config::getConnexion();
+
+    try {
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':username', $username);
+        $stmt->execute();
+        return $stmt->fetch(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        die('Error: ' . $e->getMessage());
+    }
 }
+public function loginUser($username, $password)
+  {
+      $db = config::getConnexion();
+      $sql = "SELECT * FROM users WHERE username = :username";
+      
+      try {
+          $stmt = $db->prepare($sql);
+          $stmt->bindValue(':username', $username);
+          $stmt->execute();
+          $user = $stmt->fetch(PDO::FETCH_ASSOC);
+  
+          if ($user && password_verify($password, $user['password'])) {
+              // Set session data
+              $_SESSION['user'] = [
+                  'id' => $user['id'],
+                  'username' => $user['username'],
+                  'nom' => $user['nom'],
+                  'prenom' => $user['prenom'],
+                  'email' => $user['email'],
+                  'numtelephone' => $user['numtelephone'],
+                  'role' => $user['role'],
+                  'date_of_birth' => $user['date_of_birth'],
+                  'cin' => $user['cin'],
+                  'photo' => $user['photo'], 
+              ];
+  
+              // Redirect based on user role
+              if ($user['role'] === 'admin') {
+                  header('Location: ../backOffice/dashboard.php');
+              } else if ($user['role'] === 'agent' || $user['role'] === 'client') {
+                  header('Location: ../frontOffice/list_cars.php');
+              }
+              exit(); // Ensure the script stops after the redirection
+          } else {
+              return false; // Invalid credentials
+          }
+      } catch (Exception $e) {
+          die('Error: ' . $e->getMessage());
+      }
+  }
+  
+   
+}
+
 ?>

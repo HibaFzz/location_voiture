@@ -1,4 +1,6 @@
 <?php
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['admin']);
 include '../../controllers/UserController.php';
 
 $userController = new UserController();
@@ -19,7 +21,7 @@ if ($userId) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <?php include('header.php'); ?>
+    <?php include('index.php'); ?>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>User Profile</title>
@@ -144,5 +146,4 @@ if ($userId) {
         </div>
     </div>
 </body>
-<?php include('footer.php'); ?>
 </html>

@@ -1,4 +1,6 @@
 <?php
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['admin']);
 include '../../controllers/ContractController.php';
 
 $contractController = new ContractController();

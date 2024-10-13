@@ -1,4 +1,6 @@
 <?php
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['client','agent']);
 include '../../controllers/CarController.php';
 
 $carsController = new CarController();
