@@ -48,8 +48,9 @@ function isActive($page) {
         <li class="nav-item <?= isActive('about.php'); ?>"><a href="about.php" class="nav-link">About</a></li>
         
         <li class="nav-item <?= isActive('list_cars.php'); ?>"><a href="list_cars.php" class="nav-link">Cars</a></li>
-        <?php if ($currentUser['role'] === 'agent'): ?>
+       
           <li class="nav-item <?= isActive('list_contracts.php'); ?>"><a href="list_contracts.php" class="nav-link">Contracts</a></li>
+        <?php if ($currentUser['role'] === 'agent'): ?>
           <li class="nav-item <?= isActive('user_list.php'); ?>"><a href="user_list.php" class="nav-link">Users</a></li>
         <?php endif; ?>
         
