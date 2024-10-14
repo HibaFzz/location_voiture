@@ -1,7 +1,9 @@
 <?php
 include '../../controllers/ContractController.php'; // Include the ContractController
-
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['client','agent']);
 $contractController = new ContractController(); // Instance of ContractController
+$currentUser = AuthController::getCurrentUser();
 
 $errors = []; // Initialize an array to hold error messages
 

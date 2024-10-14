@@ -316,47 +316,47 @@ class CarController
     }
     
     public function addContract($user_id, $car_id, $start_date, $end_date) {
+        $db = config::getConnexion();
         try {
-            $car = $this->getCar($car_id);
-
+            // Fetch car details for price per day
+            $carModel = new CarController();
+            $car = $carModel->getCar($car_id);
+    
             if (!$car) {
                 throw new Exception("Car not found");
             }
-
+    
+            // Calculate the number of days between start and end date
             $start = new DateTime($start_date);
             $end = new DateTime($end_date);
             $interval = $start->diff($end);
-            $nbJours = $interval->days; 
-
-            if ($nbJours <= 0) {
-                throw new Exception("End date must be after start date.");
-            }
-
+            $nbJours = $interval->days;
+    
+            // Calculate total payment
             $totalPayment = $nbJours * $car['priceperday'];
-
-            $sql = "INSERT INTO contracts (user_id, car_id, start_date, end_date, total_payment, status) 
-                    VALUES (:user_id, :car_id, :start_date, :end_date, :total_payment, 'active')";
-
-            $stmt = $this->db->prepare($sql);
+            $currentDate = date('Y-m-d H:i:s'); // Date actuelle pour l'ajout du contrat
+    
+            // SQL to insert contract with payment_status as 'pending'
+            $sql = "INSERT INTO contracts (user_id, car_id, start_date, end_date, total_payment, status, date_added, payment_status) 
+                    VALUES (:user_id, :car_id, :start_date, :end_date, :total_payment, 'active', :date_added, 'pending')";
+    
+            $stmt = $db->prepare($sql);
             $stmt->bindParam(':user_id', $user_id);
             $stmt->bindParam(':car_id', $car_id);
             $stmt->bindParam(':start_date', $start_date);
             $stmt->bindParam(':end_date', $end_date);
             $stmt->bindParam(':total_payment', $totalPayment);
-
-            if (!$stmt->execute()) {
-                throw new Exception("Failed to add contract: " . implode(", ", $stmt->errorInfo()));
-            }
-
-            if (!$this->updateCarAvailability($car_id, false)) {
-                throw new Exception("Failed to update car availability.");
-            }
-
-            return "Contract added successfully. Total payment: $$totalPayment.";
+            $stmt->bindParam(':date_added', $currentDate);
+            $stmt->execute();
+    
+            // Update car availability to 'no' (not available)
+            $carModel->updateCarAvailability($car_id, false);
+            header('Location: ../frontOffice/list_contracts.php');
         } catch (Exception $e) {
-            return "Error: " . $e->getMessage();
+            die('Error: ' . $e->getMessage());
         }
     }
+    
     
     
    

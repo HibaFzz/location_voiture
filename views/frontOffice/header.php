@@ -72,9 +72,9 @@ function isActive($page) {
             <?php endif; ?>
           </a>
           <div class="dropdown-menu dropdown-menu-right" aria-labelledby="userDropdown">
-            <a class="dropdown-item" href="history.php">Historique</a>
-            <a class="dropdown-item" href="history.php">My Contract</a>
-            <a class="dropdown-item" href="view_user.php">Profile</a>
+            <a class="dropdown-item" href="Historiques.php">History</a>
+            <a class="dropdown-item" href="MyContract.php">My Contract</a>
+            <a class="dropdown-item" href="profile.php">Profile</a>
             <a class="dropdown-item" href="logout.php">Logout</a>
           </div>
         </li>

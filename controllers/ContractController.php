@@ -21,14 +21,15 @@ class ContractController
             $start = new DateTime($start_date);
             $end = new DateTime($end_date);
             $interval = $start->diff($end);
-            $nbJours = $interval->days; // Total number of rental days
+            $nbJours = $interval->days;
     
             // Calculate total payment
             $totalPayment = $nbJours * $car['priceperday'];
+            $currentDate = date('Y-m-d H:i:s'); // Date actuelle pour l'ajout du contrat
     
-            // SQL to insert contract
-            $sql = "INSERT INTO contracts (user_id, car_id, start_date, end_date, total_payment, status) 
-                    VALUES (:user_id, :car_id, :start_date, :end_date, :total_payment, 'active')";
+            // SQL to insert contract with payment_status as 'pending'
+            $sql = "INSERT INTO contracts (user_id, car_id, start_date, end_date, total_payment, status, date_added, payment_status) 
+                    VALUES (:user_id, :car_id, :start_date, :end_date, :total_payment, 'active', :date_added, 'pending')";
     
             $stmt = $db->prepare($sql);
             $stmt->bindParam(':user_id', $user_id);
@@ -36,15 +37,17 @@ class ContractController
             $stmt->bindParam(':start_date', $start_date);
             $stmt->bindParam(':end_date', $end_date);
             $stmt->bindParam(':total_payment', $totalPayment);
+            $stmt->bindParam(':date_added', $currentDate);
             $stmt->execute();
     
             // Update car availability to 'no' (not available)
-            $carModel->updateCarAvailability($car_id, 'no');
-            echo "Contract added successfully. Total payment: $totalPayment.";
+            $carModel->updateCarAvailability($car_id, false);
+            echo "Contract added successfully. Total payment: $totalPayment. Payment status: pending.";
         } catch (Exception $e) {
             die('Error: ' . $e->getMessage());
         }
     }
+    
     public function cancelContract($contract_id) {
         $db = config::getConnexion();
         try {
@@ -53,7 +56,7 @@ class ContractController
             $stmt = $db->prepare($sql);
             $stmt->bindParam(':contract_id', $contract_id, PDO::PARAM_INT);
             $stmt->execute();
-            
+    
             // Check if contract exists
             $contract = $stmt->fetch(PDO::FETCH_ASSOC);
             if (!$contract) {
@@ -61,24 +64,27 @@ class ContractController
             }
     
             $car_id = $contract['car_id'];
+            $currentDate = date('Y-m-d H:i:s'); // Date actuelle pour l'annulation
     
-            // SQL to update the contract status and remove total payment
+            // SQL to update the contract status to 'canceled' and payment_status to 'refunded'
             $updateSql = "UPDATE contracts 
-                          SET total_payment = NULL, status = 'canceled' 
+                          SET total_payment = NULL, status = 'canceled', date_canceled = :date_canceled, payment_status = 'refunded' 
                           WHERE id = :contract_id";
             $updateStmt = $db->prepare($updateSql);
             $updateStmt->bindParam(':contract_id', $contract_id, PDO::PARAM_INT);
+            $updateStmt->bindParam(':date_canceled', $currentDate);
             $updateStmt->execute();
     
             // Update car availability to true (available)
             $carModel = new CarController();
-            $carModel->updateCarAvailability($car_id, true);  // Pass boolean true for availability
+            $carModel->updateCarAvailability($car_id, true);
     
-            echo "Contract canceled successfully. Car availability updated.";
+            echo "Contract canceled successfully. Payment status: refunded.";
         } catch (Exception $e) {
             die('Error: ' . $e->getMessage());
         }
     }
+    
     
 
     // List all contracts
@@ -164,22 +170,26 @@ public function deleteContract($id) {
     
             // Calculate the new total payment
             $newTotalPayment = $nbJours * $car['priceperday'];
+            $currentDate = date('Y-m-d H:i:s'); // Date actuelle pour la mise à jour
     
-            // SQL to update contract
-            $sqlUpdate = "UPDATE contracts SET start_date = :start_date, end_date = :end_date, total_payment = :total_payment 
+            // SQL to update contract with new dates and payment
+            $sqlUpdate = "UPDATE contracts 
+                          SET start_date = :start_date, end_date = :end_date, total_payment = :total_payment, date_updated = :date_updated 
                           WHERE id = :contract_id";
             $stmtUpdate = $db->prepare($sqlUpdate);
             $stmtUpdate->bindParam(':start_date', $start_date);
             $stmtUpdate->bindParam(':end_date', $end_date);
             $stmtUpdate->bindParam(':total_payment', $newTotalPayment);
+            $stmtUpdate->bindParam(':date_updated', $currentDate);
             $stmtUpdate->bindParam(':contract_id', $contract_id);
             $stmtUpdate->execute();
     
-            echo "Contract updated successfully. New total payment: $newTotalPayment.";
+            
         } catch (Exception $e) {
             die('Error: ' . $e->getMessage());
         }
     }
+    
     
 
     // Filter Contracts with specified criteria
@@ -347,5 +357,223 @@ public function getTotalContracts($filters = [])
         $stmt->execute();
         return $stmt->fetch(PDO::FETCH_ASSOC);
     }
+
+    public function filterCurrentContracts($filters = [], $limit = 10, $offset = 0)
+{
+    // Assuming you have a session variable storing the logged-in user's ID
+    $currentUserId = $_SESSION['user']['id'];
+
+    // Base query with JOINs to include user and car details, filtering for the current user's contracts
+    $sql = "
+        SELECT contracts.*, users.nom, users.prenom, cars.vehicletitle
+        FROM contracts
+        JOIN users ON contracts.user_id = users.id
+        JOIN cars ON contracts.car_id = cars.id
+        WHERE contracts.user_id = :currentUserId
+    ";
+    
+    $db = config::getConnexion();
+    $params = [':currentUserId' => $currentUserId];
+    
+    // Filter based on status
+    if (isset($filters['status']) && $filters['status'] !== '') {
+        $sql .= " AND contracts.status = :status";
+        $params[':status'] = $filters['status'];
+    }
+
+    // Filter based on start_date
+    if (!empty($filters['start_date'])) {
+        $sql .= " AND contracts.start_date >= :start_date";
+        $params[':start_date'] = $filters['start_date'];
+    }
+
+    // Filter based on end_date
+    if (!empty($filters['end_date'])) {
+        $sql .= " AND contracts.end_date <= :end_date";
+        $params[':end_date'] = $filters['end_date'];
+    }
+
+    // Filter by user name (both first name and last name)
+    if (!empty($filters['user_name'])) {
+        $sql .= " AND (users.nom LIKE :user_name OR users.prenom LIKE :user_name)";
+        $params[':user_name'] = '%' . $filters['user_name'] . '%';
+    }
+
+    // Filter by vehicle title
+    if (!empty($filters['vehicletitle'])) {
+        $sql .= " AND cars.vehicletitle LIKE :vehicletitle";
+        $params[':vehicletitle'] = '%' . $filters['vehicletitle'] . '%';
+    }
+
+    // Apply sorting if required
+    $sql = $this->applySorting($sql, $filters['sort_by'] ?? '', $filters['order'] ?? 'asc');
+
+    // Add pagination (LIMIT and OFFSET)
+    $sql .= " LIMIT :limit OFFSET :offset";
+
+    try {
+        $stmt = $db->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        
+        // Bind other filter parameters
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+
+        $stmt->execute();
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Exception $e) {
+        die('Error: ' . $e->getMessage());
+    }
 }
+    public function getTotalCurentContracts($filters = [])
+{
+    // Assuming you have a session variable storing the logged-in user's ID
+    $currentUserId = $_SESSION['user']['id'];
+
+    // Base query to count total contracts for the current user
+    $sql = "
+        SELECT COUNT(*) as total
+        FROM contracts
+        JOIN users ON contracts.user_id = users.id
+        JOIN cars ON contracts.car_id = cars.id
+        WHERE contracts.user_id = :currentUserId
+    ";
+
+    $db = config::getConnexion();
+    $params = [':currentUserId' => $currentUserId];
+
+    // Apply the same filters as in the `filterContracts` method
+    if (isset($filters['status']) && $filters['status'] !== '') {
+        $sql .= " AND contracts.status = :status";
+        $params[':status'] = $filters['status'];
+    }
+
+    if (!empty($filters['start_date'])) {
+        $sql .= " AND contracts.start_date >= :start_date";
+        $params[':start_date'] = $filters['start_date'];
+    }
+
+    if (!empty($filters['end_date'])) {
+        $sql .= " AND contracts.end_date <= :end_date";
+        $params[':end_date'] = $filters['end_date'];
+    }
+
+    if (!empty($filters['user_name'])) {
+        $sql .= " AND (users.nom LIKE :user_name OR users.prenom LIKE :user_name)";
+        $params[':user_name'] = '%' . $filters['user_name'] . '%';
+    }
+
+    if (!empty($filters['vehicletitle'])) {
+        $sql .= " AND cars.vehicletitle LIKE :vehicletitle";
+        $params[':vehicletitle'] = '%' . $filters['vehicletitle'] . '%';
+    }
+
+    try {
+        $stmt = $db->prepare($sql);
+        
+        // Bind filter parameters
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+
+        $stmt->execute();
+        $result = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $result['total'];
+    } catch (Exception $e) {
+        die('Error: ' . $e->getMessage());
+    }
+}
+
+public function markAsPaid($contract_id) {
+    $db = config::getConnexion();
+    try {
+        // Check if the contract exists and is still pending payment
+        $sql = "SELECT * FROM contracts WHERE id = :contract_id AND payment_status = 'pending'";
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':contract_id', $contract_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $contract = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$contract) {
+            throw new Exception("Contract not found or already paid.");
+        }
+
+        $currentDate = date('Y-m-d H:i:s'); // Date actuelle pour marquer le paiement
+
+        // SQL to update payment_status to 'paid' and set the payment date
+        $updateSql = "UPDATE contracts 
+                      SET payment_status = 'paid', date_paid = :date_paid 
+                      WHERE id = :contract_id";
+        $updateStmt = $db->prepare($updateSql);
+        $updateStmt->bindParam(':date_paid', $currentDate);
+        $updateStmt->bindParam(':contract_id', $contract_id, PDO::PARAM_INT);
+        $updateStmt->execute();
+
+        header('Location: ../frontOffice/list_contracts.php');
+    } catch (Exception $e) {
+        die('Error: ' . $e->getMessage());
+    }
+}
+public function markAsCompleted($contract_id) {
+    $db = config::getConnexion();
+    try {
+        // Récupérer les informations du contrat et vérifier s'il est actif
+        $sql = "SELECT * FROM contracts WHERE id = :contract_id AND status = 'active'";
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':contract_id', $contract_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $contract = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$contract) {
+            throw new Exception("Contract not found or already completed.");
+        }
+
+        $car_id = $contract['car_id']; // Récupérer l'ID de la voiture associée au contrat
+        $currentDate = date('Y-m-d H:i:s'); // Date actuelle pour marquer le contrat comme complété
+
+        // Mettre à jour le statut du contrat à 'completed' et enregistrer la date de complétion
+        $updateSql = "UPDATE contracts 
+                      SET status = 'completed', date_updated = :date_updated 
+                      WHERE id = :contract_id";
+        $updateStmt = $db->prepare($updateSql);
+        $updateStmt->bindParam(':date_updated', $currentDate);
+        $updateStmt->bindParam(':contract_id', $contract_id, PDO::PARAM_INT);
+        $updateStmt->execute();
+
+        // Mettre à jour la disponibilité de la voiture à 'yes' (disponible)
+        $carModel = new CarController();
+        $carModel->updateCarAvailability($car_id, true);
+
+        header('Location: ../frontOffice/list_contracts.php');
+    } catch (Exception $e) {
+        die('Error: ' . $e->getMessage());
+    }
+}
+public function getUserContracts($user_id) {
+    $db = config::getConnexion();
+    try {
+        // SQL query to fetch contracts for the current user
+        $sql = "SELECT contracts.id, cars.vehicletitle, contracts.start_date, contracts.end_date, 
+                       contracts.total_payment, contracts.status, contracts.payment_status, contracts.date_paid 
+                FROM contracts 
+                JOIN cars ON contracts.car_id = cars.id 
+                WHERE contracts.user_id = :user_id";
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':user_id', $user_id, PDO::PARAM_INT);
+        $stmt->execute();
+        $contracts = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        // Return contracts data
+        return $contracts;
+    } catch (Exception $e) {
+        die('Error: ' . $e->getMessage());
+    }
+}
+
+
+}
+
+
 ?>

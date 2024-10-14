@@ -11,6 +11,7 @@ $carsController = new CarController();
 $essence = 'essence'; // Example value
 $diesel = 'diesel';   // Example value
 $all = '';             // Example value
+$currentUser = AuthController::getCurrentUser();
 
 // Initialize filters
 $filters = [
@@ -46,10 +47,10 @@ $user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
 $car_id = isset($_GET['car_id']) ? $_GET['car_id'] : null;
 $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
 $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
-
+$currentUser = AuthController::getCurrentUser();
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $car_id !== null) { // Check if the request method is GET and if car_id is set
     $carController = new CarController();
-    $result = $carController->addContract($user_id, $car_id, $start_date, $end_date);
+    $result = $carController->addContract($currentUser['id'], $car_id, $start_date, $end_date);
     
     $message = $result; // Store the result message to display later
 }
@@ -65,7 +66,7 @@ if ($user_id === null) {
 if ($car_id === null) {
     $message = "Car ID is not set.";
 }
-$currentUser = AuthController::getCurrentUser();
+
 
 
 ?>
@@ -288,6 +289,7 @@ $currentUser = AuthController::getCurrentUser();
         }
 
        
+       
 
         .price {
             color: #007BFF;
@@ -387,14 +389,17 @@ $currentUser = AuthController::getCurrentUser();
                             <a href="view_car.php?id=<?= $car['id']; ?>" class="btn btn-outline-info action-button view">View</a>
                             <?php if ($car['disponible'] === 1 && $currentUser['role']=== 'client'): ?>
                                 <a href="#" class="btn btn-outline-success action-button book-now" 
-                                data-toggle="modal" 
-                                data-target="#bookingModal" 
-                                data-user_id="4" 
-                                data-car_id="<?= $car['id']; ?>" 
-                                data-car_title="<?= $car['vehicletitle']; ?>" 
-                                data-price_per_day="<?= $car['priceperday']; ?>">
+                                data-toggle="modal" data-target="#carModal"
+                                data-car-id="<?= $car['id']; ?>"
+                                data-car-title="<?= $car['vehicletitle']; ?>"
+                                data-price="<?= $car['priceperday']; ?>"
+                                data-user-id="<?= $currentUser['id']; ?>"
+                                data-matricule="<?= $car['matricule']; ?>"
+                                data-start-date="<?= $start_date; ?>"
+                                data-end-date="<?= $end_date; ?>">
                                     Book now
                                 </a>
+
                             <?php endif; ?>
                             <hr>
                             <?php if ($currentUser['role'] === 'agent'): ?>
@@ -437,75 +442,62 @@ $currentUser = AuthController::getCurrentUser();
     <div>
         <?php include('footer.php'); ?>
     </div>
-       <!-- Modal Structure -->
-       <div class="modal fade" id="bookingModal" tabindex="-1" role="dialog" aria-labelledby="bookingModalLabel" aria-hidden="true">
+       <!-- Modal for Car Booking -->
+<div class="modal fade" id="carModal" tabindex="-1" role="dialog" aria-labelledby="carModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title" id="bookingModalLabel">Book Car: <span id="car_title"></span></h5>
+                <h5 class="modal-title" id="carModalLabel">Car Booking</h5>
                 <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                 </button>
             </div>
             <div class="modal-body">
-                <form id="contractForm">
-                    <input type="hidden" id="user_id" name="user_id">
-                    <input type="hidden" id="car_id" name="car_id">
-                    
-                    <label for="start_date">Start Date:</label>
-                    <input type="date" id="start_date" name="start_date" required>
-                    
-                    <label for="end_date">End Date:</label>
-                    <input type="date" id="end_date" name="end_date" required>
-                    
-                    <div id="selectedCar" class="mt-3">
-                        <strong>Selected Car:</strong> <span id="car_title"></span> at <span id="price_per_day"></span> TND/day.
+                <form method="GET" action="">
+                    <div class="form-group">
+                        <label for="start_date">Start Date:</label>
+                        <input type="date" id="start_date" name="start_date" required>
                     </div>
+                    <div class="form-group">
+                        <label for="end_date">End Date:</label>
+                        <input type="date" id="end_date" name="end_date" required>
+                    </div>
+                    <input type="hidden" name="user_id" id="user_id" value="<?= $currentUser['id']; ?>">
+                    <input type="hidden" name="car_id" id="car_id">
+                    <input type="hidden" name="price_per_day" id="price_per_day" value="">
+                    <div class="modal-footer d-flex justify-content-center">
+                        <button type="submit" class="btn btn-primary">Confirm Booking</button>
+                    </div>
+
                 </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
-                <button type="submit" form="contractForm" class="btn btn-primary">Confirm Booking</button>
+                <p id="modalMessage"></p>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Include necessary JavaScript files -->
 <script>
-    // Populate modal fields with car data when "Book now" is clicked
-    $('#bookingModal').on('show.bs.modal', function (event) {
-        var button = $(event.relatedTarget); // Button that triggered the modal
-        var userId = button.data('user_id');
-        var carId = button.data('car_id');
-        var carTitle = button.data('car_title');
-        var pricePerDay = button.data('price_per_day');
-
+    // Handle passing data to modal
+    $('#carModal').on('show.bs.modal', function (event) {
+        var button = $(event.relatedTarget);
+        var carId = button.data('car-id');
+        var carTitle = button.data('car-title');
+        var price = button.data('price');
+        var userId = button.data('user-id');
+        var startDate = button.data('start-date');
+        var endDate = button.data('end-date');
+        
         var modal = $(this);
-        modal.find('#user_id').val(userId);
         modal.find('#car_id').val(carId);
         modal.find('#car_title').text(carTitle);
-        modal.find('#price_per_day').text(pricePerDay);
-    });
-
-    // Handle form submission without server-side processing
-    $('#contractForm').submit(function(event) {
-        event.preventDefault(); // Prevent default form submission
-
-        // Capture form data
-        var userId = $('#user_id').val();
-        var carId = $('#car_id').val();
-        var startDate = $('#start_date').val();
-        var endDate = $('#end_date').val();
-        var carTitle = $('#car_title').text();
-
-        // Simulate a booking success message
-        alert('Booking successful! You have booked the car: ' + carTitle + '. Please check "Contracts" for more details.');
-
-        // Redirect to list_cars.php
-        window.location.href = 'list_cars.php';
+        modal.find('#price_per_day').val(price);
+        modal.find('#user_id').val(userId);
+        modal.find('#start_date').val(startDate);
+        modal.find('#end_date').val(endDate);
+        
     });
 </script>
-
 </body>
 
 </html>
