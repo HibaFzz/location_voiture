@@ -181,20 +181,22 @@ $totalPages = ceil($totalContracts / $limit);
         </div>
     </div>
 
-    <div class="text-center mt-4">
-        <a href="add_contract.php" class="btn btn-primary">Add New Contract</a>
-    </div>
-
-    <!-- Pagination -->
-    <nav aria-label="Page navigation" class="mt-4">
-        <ul class="pagination justify-content-center">
-            <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                <li class="page-item <?= ($i == $page) ? 'active' : ''; ?>">
-                    <a class="page-link" href="?page=<?= $i; ?>"><?= $i; ?></a>
-                </li>
-            <?php endfor; ?>
-        </ul>
-    </nav>
+     <!-- Pagination -->
+     <nav aria-label="Page navigation">
+                    <ul class="pagination justify-content-center mt-4">
+                        <li class="page-item <?= ($page == 1) ? 'disabled' : ''; ?>">
+                            <a class="page-link" href="?page=<?= $page - 1; ?>&<?= http_build_query($filters); ?>" tabindex="-1">Previous</a>
+                        </li>
+                        <?php for ($i = 1; $i <= $totalPages; $i++): ?>
+                            <li class="page-item <?= ($page == $i) ? 'active' : ''; ?>">
+                                <a class="page-link" href="?page=<?= $i; ?>&<?= http_build_query($filters); ?>"><?= $i; ?></a>
+                            </li>
+                        <?php endfor; ?>
+                        <li class="page-item <?= ($page == $totalPages) ? 'disabled' : ''; ?>">
+                            <a class="page-link" href="?page=<?= $page + 1; ?>&<?= http_build_query($filters); ?>">Next</a>
+                        </li>
+                    </ul>
+                </nav>
 </div>
 
 <!-- Bootstrap JS and dependencies -->
