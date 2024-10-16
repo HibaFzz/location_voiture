@@ -41,7 +41,7 @@ class AuthController
         // Check if the user's role is in the allowed roles array
         if (!in_array($_SESSION['user']['role'], $roles)) {
             // If the role is not allowed, redirect to "access denied"
-            header('Location: ../access_denied.php');
+            header('Location: ../frontOffice/access_denied.php');
             exit();
         }
     }

@@ -28,6 +28,7 @@ $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $car_id !== null) { // Check if the request method is GET and if car_id is set
     $result = $carsController->addContract($user_id, $car_id, $start_date, $end_date);
     $message = $result; // Store the result message to display later
+    header('Location: ../frontOffice/list_contracts.php');
 }
 
 $car_title = isset($_GET['car_title']) ? $_GET['car_title'] : 'Selected Car'; // Get car title from URL

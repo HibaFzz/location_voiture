@@ -2,7 +2,7 @@
 require_once '../../controllers/AuthController.php';
 AuthController::checkMultipleRoles(['client','agent']);
 include '../../controllers/CarController.php';
-
+$currentUser = AuthController::getCurrentUser();
 $carsController = new CarController();
 
 if (isset($_GET['id'])) {
@@ -20,7 +20,7 @@ if (!$car) {
 $message = ""; // Initialize message variable
 
 // Get the user ID and car ID from GET parameters
-$user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
+$user_id = isset($_GET['user_id']) ? $_GET['user_id'] : $currentUser['id'];
 $car_id = isset($_GET['id']) ? $_GET['id'] : null; // Use 'id' for car ID
 $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
 $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';

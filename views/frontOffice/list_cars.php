@@ -402,7 +402,7 @@ if ($car_id === null) {
 
                             <?php endif; ?>
                             <hr>
-                            <?php if ($currentUser['role'] === 'agent'): ?>
+                            <?php if ($currentUser['role'] === 'client'): ?>
                                 <a href="update_car.php?id=<?= $car['id']; ?>" class="btn btn-outline-warning action-button">Update</a> |
                                 <a href="delete_car.php?id=<?= $car['id']; ?>" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to delete this car?');">Delete</a>
                             <?php endif; ?>

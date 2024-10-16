@@ -1,6 +1,7 @@
 <?php
 include '../../controllers/CarController.php';
-
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['client','agent']);
 $carsController = new CarController();
 $errors = [];
 $uploadOk = 1;
@@ -68,10 +69,32 @@ if (isset($_POST['update_car']) && isset($carId)) {
     $nbrpersonne = trim($_POST['nbrpersonne']);
     $disponible = isset($_POST['disponible']) ? (int)$_POST['disponible'] : 0;
 
+    if (empty($matricule)) {
+        $errors['matricule'] = "Matricule is required.";
+    } elseif (!preg_match('/^[0-9]{3}TUN[0-9]{4}$/', $matricule)) {
+        $errors['matricule'] = "Matricule must be in the format 111TUN1111.";
+    }
+
     if (!array_key_exists($brandInput, $brandsWithModels)) {
-        $errors[] = "Brand not found.";
+        $errors['brand'] = "Brand not found.";
     } elseif (!in_array($modelInput, $brandsWithModels[$brandInput])) {
-        $errors[] = "Model not found for the selected brand.";
+        $errors['model'] = "Model not found for the selected brand.";
+    }
+
+    if (empty($priceperday) || !is_numeric($priceperday)) {
+        $errors['priceperday'] = "Valid price per day is required.";
+    }
+
+    if (empty($fueltype)) {
+        $errors['fueltype'] = "Fuel type is required.";
+    }
+
+    if (empty($modelyear)) {
+        $errors['modelyear'] = "Model year is required.";
+    }
+
+    if (empty($nbrpersonne) || !is_numeric($nbrpersonne)) {
+        $errors['nbrpersonne'] = "Number of persons must be a valid number.";
     }
 
     if (isset($_FILES["image"]) && $_FILES["image"]["error"] !== UPLOAD_ERR_NO_FILE) {
@@ -80,48 +103,41 @@ if (isset($_POST['update_car']) && isset($carId)) {
         $imageFileType = strtolower(pathinfo($target_file, PATHINFO_EXTENSION));
 
         if ($_FILES["image"]["size"] > 500000) {
-            $errors[] = "Sorry, your file is too large.";
+            $errors['image'] = "Sorry, your file is too large.";
             $uploadOk = 0;
         }
 
         if (!in_array($imageFileType, ['jpg', 'jpeg', 'png', 'gif'])) {
-            $errors[] = "Only JPG, JPEG, PNG, and GIF files are allowed.";
+            $errors['image'] = "Only JPG, JPEG, PNG, and GIF files are allowed.";
             $uploadOk = 0;
         }
 
         if ($uploadOk && empty($errors)) {
             if (!is_dir($target_dir) && !mkdir($target_dir, 0755, true)) {
-                $errors[] = "Failed to create directory.";
+                $errors['image'] = "Failed to create directory.";
             } elseif (!move_uploaded_file($_FILES["image"]["tmp_name"], $target_file)) {
-                $errors[] = "Error uploading file.";
+                $errors['image'] = "Error uploading file.";
             }
         }
     }
 
-    if (empty($errors)) {
-        $vehicleTitle = $brandInput . ' ' . $modelInput;
-
-        if (!$carsController->updateCar($carId, $matricule, $target_file, $vehicleTitle, $brandInput, $vehicleoverview, $priceperday, $fueltype, $modelyear, $nbrpersonne, $disponible)) {
-            $errors[] = "Failed to update car. Please try again.";
-        } else {
-            header('Location: list_cars.php');
-            exit();
+        if (empty($errors)) {
+            $vehicleTitle = $brandInput . ' ' . $modelInput;
+    
+            if (!$carsController->updateCar($carId, $matricule, $target_file, $vehicleTitle, $brandInput, $vehicleoverview, $priceperday, $fueltype, $modelyear, $nbrpersonne, $disponible)) {
+                $errors[] = "Failed to update car. Please try again.";
+            } else {
+                header('Location: list_cars.php');
+                exit();
+            }
         }
     }
-}
 
-if (!empty($errors)) {
-    echo '<div class="error-messages">';
-    foreach ($errors as $error) {
-        echo "<p class='error-message'>" . htmlspecialchars($error) . "</p>";
-    }
-    echo '</div>';
-}
 ?>
 
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-    
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Update Car</title>
@@ -137,15 +153,8 @@ if (!empty($errors)) {
             text-align: center;
             color: #2c3e50;
             font-size: 2.5em;
-            margin-top: 80px; /* Increased margin-top to add more space from the header */
-            margin-bottom: 40px; 
-        }
-
-        h2 {
-            text-align: center;
-            color: #007bff;
-            font-size: 2em;
-            margin-bottom: 20px;
+            margin-top: 80px;
+            margin-bottom: 40px;
         }
 
         form {
@@ -157,42 +166,31 @@ if (!empty($errors)) {
             max-width: 900px;
         }
 
-        .form-section {
+        /* Flex container for two-column layout */
+        .form-row {
             display: flex;
+            flex-wrap: wrap;
             justify-content: space-between;
-            margin: 20px 0;
-        }
-
-        .section {
-            flex: 1;
-            min-width: 300px;
-            max-width: 400px;
-            padding: 0 10px;
-        }
-
-        .section-title {
-            font-size: 1.5em;
-            color: #007bff;
-            margin-bottom: 15px;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 5px;
+            gap: 20px;
         }
 
         .form-group {
-            display: flex;
+            flex: 1;
+            min-width: 280px;
             margin-bottom: 15px;
         }
 
         .form-group label {
-            flex-basis: 35%;
-            margin-right: 10px;
+            display: block;
+            margin-bottom: 5px;
             font-weight: bold;
         }
 
         .form-group input[type="text"],
+        .form-group input[type="file"],
         .form-group select,
         .form-group textarea {
-            flex-basis: 60%;
+            width: 100%;
             padding: 8px;
             border: 1px solid #007bff;
             border-radius: 4px;
@@ -227,44 +225,18 @@ if (!empty($errors)) {
         .error-message {
             color: red;
             font-weight: bold;
-            margin: 15px 0;
-            text-align: center;
-        }
-
-        .return-link {
-            text-align: center;
-            margin-top: 20px;
-            font-size: 1.2em;
-        }
-
-        .return-link a {
-            color: #007bff;
-            text-decoration: none;
-        }
-
-        .return-link a:hover {
-            text-decoration: underline;
+            margin: 5px 0;
+            text-align: left;
         }
 
         @media (max-width: 600px) {
-            .form-section {
+            .form-row {
                 flex-direction: column;
+                gap: 15px;
             }
 
             .form-group {
-                flex-direction: column;
-                align-items: flex-start;
-            }
-
-            .form-group label {
-                flex-basis: auto;
-                margin-bottom: 5px;
-            }
-
-            .form-group select,
-            .form-group input[type="text"],
-            .form-group textarea {
-                flex-basis: 100%;
+                min-width: 100%;
             }
 
             input[type="submit"] {
@@ -277,112 +249,160 @@ if (!empty($errors)) {
 
     <?php include('header.php'); ?>
 
-    <div style="padding-top: 100px;"> <!-- Added padding-top to increase space from header -->
-
+    <div style="padding-top: 100px;">
         <h1>Update Car</h1>
 
- 
         <form action="" method="POST" enctype="multipart/form-data">
-            <div class="form-section">
-                <div class="section">
-                    <div class="section-title">Car Information</div>
-                    <div class="form-group">
-                        <label for="matricule">Matricule (Format: 111TUN1111):</label>
-                        <input type="text" name="matricule" id="matricule" required value="<?php echo $matricule ?? ''; ?>">
+        <!-- Matricule and Image Section -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="matricule">Matricule (Format: 111TUN1111):</label>
+                <input type="text" name="matricule" id="matricule" value="<?php echo $matricule ?? ''; ?>">
+                <?php if (isset($errors['matricule'])): ?>
+                    <div class="error-message">
+                        <p><?php echo $errors['matricule']; ?></p>
                     </div>
-
-                    <div class="form-group" style="flex-direction: column;">
-                        <label for="image">Image:</label>
-                        <input type="file" name="image" id="image" accept="image/*" onchange="previewImage(event)" style="margin-bottom: 10px;">
-                        <?php if ($target_file): ?>
-                            <img id="imagePreview" src="<?php echo $target_file; ?>" alt="Current Image" style="max-width: 200px; margin-top: 10px;">
-                        <?php else: ?>
-                            <img id="imagePreview" style="display: none; max-width: 200px; margin-top: 10px;">
-                        <?php endif; ?>
-                    </div>
-
-                    <div class="form-group">
-                    <label for="brand">Brand:</label>
-                        <select name="brand" id="brand" required>
-                            <?php foreach ($brandsWithModels as $brandOption => $models): ?>
-                                <option value="<?php echo $brandOption; ?>" <?php echo ($brand === $brandOption) ? 'selected' : ''; ?>><?php echo $brandOption; ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="model">Model:</label>
-                        <select name="model" id="model" required>
-                            <?php foreach ($brandsWithModels[$brand] as $modelOption): ?>
-                                <option value="<?php echo $modelOption; ?>" <?php echo ($model === $modelOption) ? 'selected' : ''; ?>><?php echo $modelOption; ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="section">
-                    <div class="section-title">Pricing And Availability</div>
-                    <div class="form-group">
-                        <label for="vehicleoverview">Overview:</label>
-                        <textarea name="vehicleoverview" id="vehicleoverview" rows="4" required><?php echo $vehicleoverview ?? ''; ?></textarea>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="priceperday">Price per Day ($):</label>
-                        <input type="text" name="priceperday" id="priceperday" required value="<?php echo $priceperday ?? ''; ?>">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="fueltype">Fuel Type:</label>
-                        <select name="fueltype" id="fueltype" required>
-                            <?php foreach ($fuelTypes as $fuel): ?>
-                                <option value="<?php echo $fuel; ?>" <?php echo (isset($fueltype) && $fueltype === $fuel) ? 'selected' : ''; ?>><?php echo ucfirst($fuel); ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="modelyear">Model Year:</label>
-                        <select name="modelyear" id="modelyear" required>
-                            <?php foreach ($modelYears as $year): ?>
-                                <option value="<?php echo $year; ?>" <?php echo (isset($modelyear) && $modelyear == $year) ? 'selected' : ''; ?>><?php echo $year; ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="nbrpersonne">Number of Seats:</label>
-                        <select name="nbrpersonne" id="nbrpersonne" required>
-                            <?php foreach ($personOptions as $option): ?>
-                                <option value="<?php echo $option; ?>" <?php echo (isset($nbrpersonne) && $nbrpersonne == $option) ? 'selected' : ''; ?>><?php echo $option; ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="disponible">Availability:</label>
-                        <select name="disponible" id="disponible" required>
-                            <?php foreach ($disponibleOptions as $key => $value): ?>
-                                <option value="<?php echo $key; ?>" <?php echo (isset($disponible) && $disponible === $key) ? 'selected' : ''; ?>><?php echo $value; ?></option>
-                            <?php endforeach; ?>
-                        </select>
-                    </div>
-                </div>
+                <?php endif; ?>
             </div>
 
-            <!-- Submit Button -->
-            <input type="submit" name="update_car" value="Update Car">
-        </form>
-
-        <!-- Return Link -->
-        <div class="return-link">
-            <a href="list_cars.php">Back to Cars</a>
+            <div class="form-group">
+                <label for="image">Image:</label>
+                <input type="file" name="image" id="image" accept="image/*" onchange="previewImage(event)">
+                <?php if (isset($errors['image'])): ?>
+                    <div class="error-message">
+                        <p><?php echo $errors['image']; ?></p>
+                    </div>
+                <?php endif; ?>
+                <?php if (!empty($target_file)): ?>
+                    <img id="imagePreview" src="<?php echo $target_file; ?>" alt="Car Image" style="max-width: 200px;">
+                <?php endif; ?>
+            </div>
         </div>
-    </div> <!-- End of container -->
-</body>
+
+        <!-- Brand and Model Section -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="brand">Brand:</label>
+                <select name="brand" id="brand">
+                    <?php foreach ($brandsWithModels as $brandOption => $models): ?>
+                        <option value="<?php echo $brandOption; ?>" <?php echo ($brand === $brandOption) ? 'selected' : ''; ?>><?php echo $brandOption; ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if (isset($errors['brand'])): ?>
+                    <div class="error-message">
+                        <p><?php echo $errors['brand']; ?></p>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="form-group">
+                <label for="model">Model:</label>
+                <select name="model" id="model">
+                    <?php if (isset($brandsWithModels[$brand])): ?>
+                        <?php foreach ($brandsWithModels[$brand] as $modelOption): ?>
+                            <option value="<?php echo $modelOption; ?>" <?php echo (isset($model) && $model === $modelOption) ? 'selected' : ''; ?>><?php echo $modelOption; ?></option>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </select>
+                <?php if (isset($errors['model'])): ?>
+                    <div class="error-message">
+                        <p><?php echo $errors['model']; ?></p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Overview and Price Section -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="vehicleoverview">Overview:</label>
+                <textarea name="vehicleoverview" id="vehicleoverview"><?php echo $vehicleoverview ?? ''; ?></textarea>
+            </div>
+
+            <div class="form-group">
+                <label for="priceperday">Price per Day:</label>
+                <input type="text" name="priceperday" id="priceperday" value="<?php echo $priceperday ?? ''; ?>">
+                <?php if (isset($errors['priceperday'])): ?>
+                    <div class="error-message">
+                        <p><?php echo $errors['priceperday']; ?></p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Fuel Type and Model Year Section -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="fueltype">Fuel Type:</label>
+                <select name="fueltype" id="fueltype">
+                    <option value="">Select Fuel Type</option>
+                    <?php foreach ($fuelTypes as $fuel): ?>
+                        <option value="<?php echo $fuel; ?>" <?php echo ($fueltype === $fuel) ? 'selected' : ''; ?>><?php echo ucfirst($fuel); ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if (isset($errors['fueltype'])): ?>
+                    <div class="error-message">
+                        <p><?php echo $errors['fueltype']; ?></p>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="form-group">
+                <label for="modelyear">Model Year:</label>
+                <select name="modelyear" id="modelyear">
+                    <option value="">Select Model Year</option>
+                    <?php foreach ($modelYears as $year): ?>
+                        <option value="<?php echo $year; ?>" <?php echo ($modelyear == $year) ? 'selected' : ''; ?>><?php echo $year; ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if (isset($errors['modelyear'])): ?>
+                    <div class="error-message">
+                        <p><?php echo $errors['modelyear']; ?></p>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
+
+        <!-- Number of Persons and Availability Section -->
+        <div class="form-row">
+            <div class="form-group">
+                <label for="nbrpersonne">Number of Persons:</label>
+                <select name="nbrpersonne" id="nbrpersonne">
+                    <option value="">Select Number of Persons</option>
+                    <?php foreach ($personOptions as $person): ?>
+                        <option value="<?php echo $person; ?>" <?php echo ($nbrpersonne == $person) ? 'selected' : ''; ?>><?php echo $person; ?></option>
+                    <?php endforeach; ?>
+                </select>
+                <?php if (isset($errors['nbrpersonne'])): ?>
+                    <div class="error-message">
+                        <p><?php echo $errors['nbrpersonne']; ?></p>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="form-group">
+                <label for="disponible">Available:</label>
+                <select name="disponible" id="disponible">
+                    <?php foreach ($disponibleOptions as $key => $option): ?>
+                        <option value="<?php echo $key; ?>" <?php echo ($disponible == $key) ? 'selected' : ''; ?>><?php echo $option; ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+
+        <!-- Submit Button -->
+        <div class="form-row">
+            <input type="submit" name="update_car" value="Update Car">
+        </div>
+    </form>
+    </div>
+    <div style="text-align: center;"> <!-- Center the back button -->
+            <a href="list_cars.php" class="back-button">Back to Car List</a>
+        </div>
 
 
-    <script>
+
+        <script>
         function previewImage(event) {
             const output = document.getElementById('imagePreview');
             output.src = URL.createObjectURL(event.target.files[0]);

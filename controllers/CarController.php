@@ -274,12 +274,12 @@ class CarController
     }
 
     public function getCarImagePathByMatricule($matricule) {
-        $sql = "SELECT image_path FROM cars WHERE matricule = :matricule LIMIT 1";
+        $sql = "SELECT image FROM cars WHERE matricule = :matricule LIMIT 1";
         $query = $this->db->prepare($sql);
         $query->bindParam(':matricule', $matricule); 
         $query->execute();
         
-        return $query->fetch(PDO::FETCH_ASSOC)['image_path'] ?? null; 
+        return $query->fetch(PDO::FETCH_ASSOC)['image'] ?? null; 
     }
 
     public function deleteCar($id) {
@@ -351,7 +351,7 @@ class CarController
     
             // Update car availability to 'no' (not available)
             $carModel->updateCarAvailability($car_id, false);
-            header('Location: ../frontOffice/list_contracts.php');
+            
         } catch (Exception $e) {
             die('Error: ' . $e->getMessage());
         }

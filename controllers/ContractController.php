@@ -571,7 +571,53 @@ public function getUserContracts($user_id) {
         die('Error: ' . $e->getMessage());
     }
 }
+public function getRecentlyReturnedCarsLast7Days($page = 1, $limit = 10) {
+    $db = config::getConnexion();
+    try {
+        // Calculate the offset
+        $offset = ($page - 1) * $limit;
 
+        // SQL to count the total number of records for pagination
+        $countSql = "SELECT COUNT(*) as total
+                     FROM cars c
+                     JOIN contracts co ON c.id = co.car_id
+                     WHERE co.status IN ('completed', 'canceled')
+                     AND (co.date_updated >= NOW() - INTERVAL 7 DAY OR co.date_canceled >= NOW() - INTERVAL 7 DAY)";
+
+        $stmtCount = $db->prepare($countSql);
+        $stmtCount->execute();
+        $totalRecords = $stmtCount->fetch(PDO::FETCH_ASSOC)['total'];
+
+        // Calculate total pages
+        $totalPages = ceil($totalRecords / $limit);
+
+        // SQL to get paginated results for cars returned in the last 7 days
+        $sql = "SELECT c.id AS car_id, c.matricule, c.vehicletitle, co.status, co.date_updated, co.date_canceled, u.username
+                FROM cars c
+                JOIN contracts co ON c.id = co.car_id
+                JOIN users u ON co.user_id = u.id
+                WHERE co.status IN ('completed', 'canceled')
+                AND (co.date_updated >= NOW() - INTERVAL 7 DAY OR co.date_canceled >= NOW() - INTERVAL 7 DAY)
+                ORDER BY GREATEST(co.date_updated, co.date_canceled) DESC
+                LIMIT :limit OFFSET :offset";
+
+        $stmt = $db->prepare($sql);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+        $stmt->bindValue(':offset', $offset, PDO::PARAM_INT);
+        $stmt->execute();
+
+        // Fetch all returned cars
+        $returnedCars = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        return [
+            'cars' => $returnedCars,
+            'totalPages' => $totalPages,
+            'currentPage' => $page,
+        ];
+    } catch (Exception $e) {
+        die('Error: ' . $e->getMessage());
+    }
+}
 
 }
 
