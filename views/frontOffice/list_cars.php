@@ -8,9 +8,10 @@ include '../../controllers/CarController.php';
 $carsController = new CarController();
 
 // Define the fuel types
-$essence = 'essence'; // Example value
-$diesel = 'diesel';   // Example value
-$all = '';             // Example value
+$essence = 'essence';  
+$diesel = 'diesel';  
+$electric = 'electric';   
+$all = '';              
 $currentUser = AuthController::getCurrentUser();
 
 // Initialize filters
@@ -343,6 +344,8 @@ if ($car_id === null) {
                     <option value="">All</option>
                     <option value="<?= $essence; ?>" <?= (isset($filters['fueltype']) && in_array($essence, $filters['fueltype'])) ? 'selected' : ''; ?>>Essence</option>
                     <option value="<?= $diesel; ?>" <?= (isset($filters['fueltype']) && in_array($diesel, $filters['fueltype'])) ? 'selected' : ''; ?>>Diesel</option>
+                    <option value="<?= $electric; ?>" <?= (isset($filters['fueltype']) && in_array($electric, $filters['fueltype'])) ? 'selected' : ''; ?>>Electric</option>
+                
                 </select>
                 
                 <input type="submit" value="Filter" class="btn btn-outline-primary">

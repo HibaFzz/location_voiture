@@ -48,24 +48,22 @@ class CarController
     }
     
     public function filterCars($filters = [], $limit = 10, $offset = 0) {
-       
         $sql = "SELECT * FROM cars";
-        $params = []; 
+        $params = [];
     
-  
+        // Check if all filters are empty
         $allFiltersEmpty = empty($filters['brand']) && 
                            empty($filters['disponible']) && 
-                           empty($filters['fueltype']) && 
+                           (empty($filters['fueltype']) || $filters['fueltype'] === ['']) &&  // Check if fueltype is an empty array or contains an empty string
                            empty($filters['nbrpersonne']) && 
                            empty($filters['vehicletitle']) && 
                            empty($filters['modelyear']) && 
                            empty($filters['matricule']);
-    
+        
+        // Apply filters only if not all filters are empty
         if (!$allFiltersEmpty) {
-      
-            $sql .= " WHERE 1=1";
+            $sql .= " WHERE 1=1"; // Always true condition to append other conditions
     
-            
             if (!empty($filters['brand'])) {
                 $sql .= " AND brand = :brand";
                 $params[':brand'] = $filters['brand'];
@@ -73,10 +71,10 @@ class CarController
     
             if (isset($filters['disponible']) && $filters['disponible'] !== '') {
                 $sql .= " AND disponible = :disponible";
-                $params[':disponible'] = $filters['disponible'] === 'oui' ? 1 : 0; 
+                $params[':disponible'] = ($filters['disponible'] === 'oui') ? 1 : 0;
             }
     
-            if (!empty($filters['fueltype'])) {
+            if (!empty($filters['fueltype']) && $filters['fueltype'] !== ['']) {
                 $placeholders = [];
                 foreach ($filters['fueltype'] as $key => $type) {
                     $placeholder = ":fueltype{$key}";
@@ -107,16 +105,12 @@ class CarController
             }
         }
     
-   
+        // Sorting and pagination
         $sql = $this->applySorting($sql, $filters['sort_by'] ?? '', $filters['order'] ?? 'asc');
-    
-
         $sql .= " LIMIT :limit OFFSET :offset";
     
         try {
-            $stmt = $this->db->prepare($sql); 
-    
-            
+            $stmt = $this->db->prepare($sql);
             $stmt->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
             $stmt->bindValue(':offset', (int)$offset, PDO::PARAM_INT);
     
@@ -125,21 +119,17 @@ class CarController
                 $stmt->bindValue($key, $value);
             }
     
-            $stmt->execute(); 
+            $stmt->execute();
             return $stmt->fetchAll(PDO::FETCH_ASSOC); 
         } catch (Exception $e) {
             die('Error: ' . $e->getMessage());
         }
     }
     
-   
-    
     public function getTotalCarsCount($filters = []) {
-        
-        $sql = "SELECT COUNT(*) as total FROM cars"; 
-        $params = []; 
+        $sql = "SELECT COUNT(*) as total FROM cars";
+        $params = [];
     
-        
         $allFiltersEmpty = empty($filters['brand']) && 
                            empty($filters['disponible']) && 
                            empty($filters['fueltype']) && 
@@ -147,20 +137,20 @@ class CarController
                            empty($filters['vehicletitle']) && 
                            empty($filters['modelyear']) && 
                            empty($filters['matricule']);
-        
-        
-        if (!$allFiltersEmpty) {
-            $sql .= " WHERE 1=1"; 
     
-            
+        if (!$allFiltersEmpty) {
+            $sql .= " WHERE 1=1";
+    
             if (!empty($filters['brand'])) {
                 $sql .= " AND brand = :brand";
                 $params[':brand'] = $filters['brand'];
             }
-            if (isset($filters['disponible'])) {
+    
+            if (isset($filters['disponible']) && $filters['disponible'] !== '') {
                 $sql .= " AND disponible = :disponible";
-                $params[':disponible'] = $filters['disponible'] === 'oui' ? 1 : 0;
+                $params[':disponible'] = ($filters['disponible'] === 'oui') ? 1 : 0;
             }
+    
             if (!empty($filters['fueltype'])) {
                 $placeholders = [];
                 foreach ($filters['fueltype'] as $key => $type) {
@@ -170,36 +160,38 @@ class CarController
                 }
                 $sql .= " AND fueltype IN (" . implode(', ', $placeholders) . ")";
             }
+    
             if (!empty($filters['nbrpersonne'])) {
                 $sql .= " AND nbrpersonne >= :nbrpersonne";
                 $params[':nbrpersonne'] = $filters['nbrpersonne'];
             }
+    
             if (!empty($filters['vehicletitle'])) {
                 $sql .= " AND vehicletitle LIKE :vehicletitle";
                 $params[':vehicletitle'] = '%' . $filters['vehicletitle'] . '%';
             }
+    
             if (!empty($filters['modelyear'])) {
                 $sql .= " AND modelyear = :modelyear";
                 $params[':modelyear'] = $filters['modelyear'];
             }
+    
             if (!empty($filters['matricule'])) {
                 $sql .= " AND matricule LIKE :matricule";
                 $params[':matricule'] = '%' . $filters['matricule'] . '%';
             }
         }
     
-       
-        $stmt = $this->db->prepare($sql);
-    
-       
-        foreach ($params as $key => $value) {
-            $stmt->bindValue($key, $value);
-        }
-    
         try {
+            $stmt = $this->db->prepare($sql);
+    
+            foreach ($params as $key => $value) {
+                $stmt->bindValue($key, $value);
+            }
+    
             $stmt->execute();
-            $result = $stmt->fetch(PDO::FETCH_ASSOC); 
-            return $result['total']; 
+            $result = $stmt->fetch(PDO::FETCH_ASSOC);
+            return $result['total'];
         } catch (Exception $e) {
             die('Error: ' . $e->getMessage());
         }
