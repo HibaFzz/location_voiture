@@ -125,34 +125,62 @@ class UserController
 
 
     // Add new user
-    public function addUser($username, $nom, $prenom, $email, $numtelephone, $password, $role, $date_of_birth, $cin, $photo)
-    {
-        $sql = "INSERT INTO users (username, nom, prenom, email, numtelephone, password, role, date_of_birth, cin, photo) 
-                VALUES (:username, :nom, :prenom, :email, :numtelephone, :password, :role, :date_of_birth, :cin, :photo)";
-        $db = config::getConnexion();
+     // Vérification si le CIN existe déjà
+     public function cinExists($cin)
+     {
+         $sql = "SELECT COUNT(*) FROM users WHERE cin = :cin";
+         $db = config::getConnexion();
+ 
+         try {
+             $stmt = $db->prepare($sql);
+             $stmt->bindParam(':cin', $cin);
+             $stmt->execute();
+             return $stmt->fetchColumn() > 0; // Retourne vrai si le CIN existe
+         } catch (Exception $e) {
+             die('Error: ' . $e->getMessage());
+         }
+     }
+ 
+     // Ajout d'un utilisateur
+     public function addUser($username, $nom, $prenom, $email, $numtelephone, $password, $role, $date_of_birth, $cin, $photo)
+     {
+         // Vérification si le CIN est unique
+         if ($this->cinExists($cin)) {
+             throw new Exception("CIN already exists");
+         }
 
-        try {
-            $stmt = $db->prepare($sql);
-            $stmt->execute([
-                ':username' => $username,
-                ':nom' => $nom,
-                ':prenom' => $prenom,
-                ':email' => filter_var($email, FILTER_SANITIZE_EMAIL), // Sanitize email
-                ':numtelephone' => $numtelephone,
-                ':password' => password_hash($password, PASSWORD_BCRYPT),
-                ':role' => $role,
-                ':date_of_birth' => $date_of_birth,
-                ':cin' => $cin,
-                ':photo' => $photo
-            ]);
-        } catch (Exception $e) {
-            die('Error: ' . $e->getMessage());
+        if ($this->usernameExists($username)) {
+            throw new Exception("Username already exists");
         }
-    }
+ 
+         $sql = "INSERT INTO users (username, nom, prenom, email, numtelephone, password, role, date_of_birth, cin, photo) 
+                 VALUES (:username, :nom, :prenom, :email, :numtelephone, :password, :role, :date_of_birth, :cin, :photo)";
+         $db = config::getConnexion();
+ 
+         try {
+             $stmt = $db->prepare($sql);
+             $stmt->execute([
+                 ':username' => $username,
+                 ':nom'      => $nom,
+                 ':prenom'   => $prenom,
+                 ':email'    => filter_var($email, FILTER_SANITIZE_EMAIL), // Nettoyage de l'email
+                 ':numtelephone' => $numtelephone,
+                 ':password' => password_hash($password, PASSWORD_BCRYPT),
+                 ':role'     => $role,
+                 ':date_of_birth' => $date_of_birth,
+                 ':cin'      => $cin,
+                 ':photo'    => $photo
+             ]);
+         } catch (Exception $e) {
+             throw new Exception($e->getMessage());
+         }
+     }
 
     // Update user
     public function updateUser($id, $username, $nom, $prenom, $password, $email, $numtelephone, $role, $date_of_birth, $cin, $photo)
     {
+        // Vérification si le CIN est unique
+        
         $sql = "UPDATE users SET username = :username, nom = :nom, prenom = :prenom, password = :password, email = :email, numtelephone = :numtelephone,  role = :role, date_of_birth = :date_of_birth, cin = :cin, photo = :photo WHERE id = :id";
         $db = config::getConnexion();
 
@@ -273,7 +301,21 @@ public function loginUser($username, $password)
           die('Error: ' . $e->getMessage());
       }
   }
-  
+  public function usernameExists($username)
+  {
+      $sql = "SELECT COUNT(*) FROM users WHERE username = :username";
+      $db = config::getConnexion();
+
+      try {
+          $stmt = $db->prepare($sql);
+          $stmt->bindParam(':username', $username);
+          $stmt->execute();
+          return $stmt->fetchColumn() > 0; // Retourne vrai si le username existe
+      } catch (Exception $e) {
+          die('Error: ' . $e->getMessage());
+      }
+  }
+
    
 }
 

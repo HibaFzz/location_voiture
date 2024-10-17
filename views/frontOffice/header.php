@@ -50,7 +50,7 @@ function isActive($page) {
         <li class="nav-item <?= isActive('list_cars.php'); ?>"><a href="list_cars.php" class="nav-link">Cars</a></li>
        
           <li class="nav-item <?= isActive('list_contracts.php'); ?>"><a href="list_contracts.php" class="nav-link">Contracts</a></li>
-        <?php if ($currentUser['role'] === 'agent'): ?>
+        <?php if ($currentUser['role'] === 'client'): ?>
           <li class="nav-item <?= isActive('user_list.php'); ?>"><a href="user_list.php" class="nav-link">Users</a></li>
         <?php endif; ?>
         
