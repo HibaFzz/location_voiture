@@ -223,7 +223,7 @@ foreach ($users as $user) {
 
                     <div class="actions">
                         <a href="view_user.php?id=<?= $user['id']; ?>" class="btn btn-info">View</a>
-                        <a href="edit_user.php?id=<?= $user['id']; ?>" class="btn btn-warning">Edit</a>
+                        <a href="update_user.php?id=<?= $user['id']; ?>" class="btn btn-warning">Edit</a>
                         <a href="delete_user.php?id=<?= $user['id']; ?>" class="btn btn-danger" onclick="return confirm('Are you sure you want to delete this user?');">Delete</a>
                     </div>
                 </div>

@@ -16,11 +16,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'GET') {
         $message = "User ID is not set.";
     } else {
         $carController = new CarController();
-        $message = $carController->addContract($user_id, $car_id, $start_date, $end_date);
+        
+        // Attempt to add a contract
+        try {
+            $carController->addContract($user_id, $car_id, $start_date, $end_date);
+            $message = "Contract added successfully."; // Success message
+        } catch (Exception $e) {
+            $message = "Error adding contract: " . $e->getMessage(); // Error message
+        }
     }
 }
 
-// Retrieve car title and price per day, if available
+
 $car_title = $_GET['car_title'] ?? 'Selected Car';
 $price_per_day = $_GET['price_per_day'] ?? 0;
 ?>

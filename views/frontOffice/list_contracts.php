@@ -1,9 +1,8 @@
 <?php
 include '../../controllers/ContractController.php';
 require_once '../../controllers/AuthController.php';
-AuthController::checkMultipleRoles(['client', 'agent']);
+AuthController::checkMultipleRoles(['agent']);
 
-// Create an instance of ContractController
 $contractController = new ContractController();
 $filters = [
     'status' => $_GET['status'] ?? '',
@@ -15,31 +14,26 @@ $filters = [
     'user_name' => $_GET['user_name'] ?? '', 
     'vehicletitle' => $_GET['vehicletitle'] ?? ''
 ];
-$currentUser = AuthController::getCurrentUser();
-// Pagination settings
-$limit = 9;
-$page = $_GET['page'] ?? 1; // Get the current page or set to 1 if not defined
-$offset = ($page - 1) * $limit; // Calculate offset for SQL query
 
-// Fetch contracts based on filters and pagination
+$limit = 9;
+$page = $_GET['page'] ?? 1; 
+$offset = ($page - 1) * $limit; 
+
 $contracts = $contractController->filterContracts($filters, $limit, $offset);
 
-// Get total number of contracts for pagination
 $totalContracts = $contractController->getTotalContracts($filters);
 
-// Calculate total pages
 $totalPages = ceil($totalContracts / $limit);
 
-// Handle form submissions for marking contracts
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['mark_as_paid']) && isset($_POST['contract_id'])) {
         $contract_id = $_POST['contract_id'];
-        $contractController->markAsPaid($contract_id); // Call the method to mark as paid
+        $contractController->markAsPaid($contract_id);
     }
 
     if (isset($_POST['mark_as_completed']) && isset($_POST['contract_id'])) {
         $contract_id = $_POST['contract_id'];
-        $contractController->markAsCompleted($contract_id); // Call the method to mark as completed
+        $contractController->markAsCompleted($contract_id);
     }
 }
 ?>
@@ -53,16 +47,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
     <style>
         .card {
-            transition: transform 0.2s; /* Smooth scaling */
+            transition: transform 0.2s; 
         }
         .card:hover {
-            transform: scale(1.02); /* Scale up on hover */
+            transform: scale(1.02);
         }
         .export-pdf-btn {
             position: absolute;
             top: 10px;
             right: 10px;
-            margin-top: 10px; /* Add margin to create space */
+            margin-top: 10px; 
         }
 
         .card-img-top {
@@ -165,48 +159,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                             <span class="badge badge-danger">Canceled</span>
                                         <?php endif; ?>
                                     </p>
-                                    <?php if ($currentUser['role'] === 'agent'): ?>
-                                    <div class="form-group">
-                                        <label>Actions:</label><br>
-                                        
-                                        <?php if ($contract['status'] === 'active'): ?>
-                                            <!-- Mark as Paid Checkbox -->
-                                            <form method="POST" action="">
-                                                <input type="hidden" name="contract_id" value="<?= $contract['id']; ?>">
-                                                <div class="form-group">
-                                                    <label for="mark_as_paid_<?= $contract['id']; ?>">Mark as Paid:</label>
-                                                    <input 
-                                                        type="checkbox" 
-                                                        id="mark_as_paid_<?= $contract['id']; ?>" 
-                                                        name="mark_as_paid" 
-                                                        <?= $contract['payment_status'] === 'paid' ? 'checked disabled' : ''; ?> 
-                                                        <?= ($contract['status'] === 'completed') ? 'disabled' : ''; ?> 
-                                                        onchange="this.form.submit();">
-                                                </div>
-                                            </form>
-                                            
-                                            <!-- Mark as Completed Checkbox -->
-                                            <form method="POST" action="">
-                                                <input type="hidden" name="contract_id" value="<?= $contract['id']; ?>">
-                                                <div class="form-group">
-                                                    <label for="mark_as_completed_<?= $contract['id']; ?>">Mark as Completed:</label>
-                                                    <input 
-                                                        type="checkbox" 
-                                                        id="mark_as_completed_<?= $contract['id']; ?>" 
-                                                        name="mark_as_completed" 
-                                                        <?= ($contract['status'] === 'completed') ? 'checked' : ''; ?> 
-                                                        onchange="this.form.submit();">
-                                                </div>
-                                            </form>
-                                            
-                                        <?php endif; ?>
-                                    </div>
-                                    <?php endif?>
 
-                                    <div class="btn-group mt-3">
+                                    <div class="form-group">
+                                    <label>Actions:</label><br>
+                                    
+                                    <?php if ($contract['status'] === 'active'): ?>
+                                        <!-- Mark as Paid Checkbox -->
+                                        <form method="POST" action="">
+                                            <input type="hidden" name="contract_id" value="<?= $contract['id']; ?>">
+                                            <div class="form-group">
+                                                <label for="mark_as_paid_<?= $contract['id']; ?>">Mark as Paid:</label>
+                                                <input 
+                                                    type="checkbox" 
+                                                    id="mark_as_paid_<?= $contract['id']; ?>" 
+                                                    name="mark_as_paid" 
+                                                    <?= $contract['payment_status'] === 'paid' ? 'checked disabled' : ''; ?> 
+                                                    <?= ($contract['status'] === 'completed') ? 'disabled' : ''; ?> 
+                                                    onchange="this.form.submit();">
+                                            </div>
+                                        </form>
+                                        
+                                        <!-- Mark as Completed Checkbox -->
+                                        <form method="POST" action="">
+                                            <input type="hidden" name="contract_id" value="<?= $contract['id']; ?>">
+                                            <div class="form-group">
+                                                <label for="mark_as_completed_<?= $contract['id']; ?>">Mark as Completed:</label>
+                                                <input 
+                                                    type="checkbox" 
+                                                    id="mark_as_completed_<?= $contract['id']; ?>" 
+                                                    name="mark_as_completed" 
+                                                    <?= ($contract['status'] === 'completed') ? 'checked' : ''; ?> 
+                                                    onchange="this.form.submit();">
+                                            </div>
+                                        </form>
+                                        
+                                    <?php endif; ?>
+                                </div>
+
+                                    <div class="btn-group mt-2">
                                         <a href="view_contract.php?id=<?= $contract['id']; ?>" class="btn btn-outline-info btn-sm">View</a> |
                                         <?php if ($contract['status'] === 'active' ): ?>
-                                            <a href="edit_contract.php?id=<?= $contract['id']; ?>" class="btn btn-outline-warning btn-sm">Edit</a> |
+                                            <a href="update_contract.php?id=<?= $contract['id']; ?>" class="btn btn-outline-warning btn-sm">Edit</a> |
+                                            <a href="cancel_contract.php?id=<?= $contract['id']; ?>" class="btn btn-outline-secondary btn-sm" onclick="return confirm('Are you sure you want to cancel this contract?');">Cancel</a>
+                                        <?php endif; ?>
+                                        <?php if ($contract['status'] === 'canceled' || $contract['status'] === 'completed'): ?>
                                             <a href="delete_contract.php?id=<?= $contract['id']; ?>" class="btn btn-outline-danger btn-sm" onclick="return confirm('Are you sure you want to delete this contract?');">Delete</a>
                                         <?php endif; ?>
                                     </div>

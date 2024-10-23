@@ -50,11 +50,15 @@ $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
 $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
 $currentUser = AuthController::getCurrentUser();
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $car_id !== null) { // Check if the request method is GET and if car_id is set
-    $carController = new CarController();
-    $result = $carController->addContract($currentUser['id'], $car_id, $start_date, $end_date);
-    
-    $message = $result; // Store the result message to display later
+    try {
+        // Attempt to add a contract
+        $carsController->addContract($user_id, $car_id, $start_date, $end_date);
+        $message = "Contract added successfully."; // Success message
+    } catch (Exception $e) {
+        $message = "Error adding contract: " . $e->getMessage(); // Error message
+    }
 }
+
 
 $car_title = isset($_GET['car_title']) ? $_GET['car_title'] : 'Selected Car'; // Get car title from URL
 $price_per_day = isset($_GET['price_per_day']) ? $_GET['price_per_day'] : 0; // Get price per day from URL
@@ -405,7 +409,7 @@ if ($car_id === null) {
 
                             <?php endif; ?>
                             <hr>
-                            <?php if ($currentUser['role'] === 'client'): ?>
+                            <?php if ($currentUser['role'] === 'agent'): ?>
                                 <a href="update_car.php?id=<?= $car['id']; ?>" class="btn btn-outline-warning action-button">Update</a> |
                                 <a href="delete_car.php?id=<?= $car['id']; ?>" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to delete this car?');">Delete</a>
                             <?php endif; ?>
@@ -445,7 +449,7 @@ if ($car_id === null) {
     <div>
         <?php include('footer.php'); ?>
     </div>
-       <!-- Modal for Car Booking -->
+      <!-- Modal for Car Booking -->
 <div class="modal fade" id="carModal" tabindex="-1" role="dialog" aria-labelledby="carModalLabel" aria-hidden="true">
     <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -465,13 +469,16 @@ if ($car_id === null) {
                         <label for="end_date">End Date:</label>
                         <input type="date" id="end_date" name="end_date" required>
                     </div>
+                    <div class="form-group">
+                        <label for="totalprice">Total Price:</label>
+                        <input type="text" id="totalprice" name="totalprice" readonly>
+                    </div>
                     <input type="hidden" name="user_id" id="user_id" value="<?= $currentUser['id']; ?>">
                     <input type="hidden" name="car_id" id="car_id">
                     <input type="hidden" name="price_per_day" id="price_per_day" value="">
                     <div class="modal-footer d-flex justify-content-center">
                         <button type="submit" class="btn btn-primary">Confirm Booking</button>
                     </div>
-
                 </form>
                 <p id="modalMessage"></p>
             </div>
@@ -482,24 +489,55 @@ if ($car_id === null) {
 <!-- Include necessary JavaScript files -->
 <script>
     // Handle passing data to modal
-    $('#carModal').on('show.bs.modal', function (event) {
-        var button = $(event.relatedTarget);
-        var carId = button.data('car-id');
-        var carTitle = button.data('car-title');
-        var price = button.data('price');
-        var userId = button.data('user-id');
-        var startDate = button.data('start-date');
-        var endDate = button.data('end-date');
-        
-        var modal = $(this);
-        modal.find('#car_id').val(carId);
-        modal.find('#car_title').text(carTitle);
-        modal.find('#price_per_day').val(price);
-        modal.find('#user_id').val(userId);
-        modal.find('#start_date').val(startDate);
-        modal.find('#end_date').val(endDate);
-        
-    });
+$('#carModal').on('show.bs.modal', function (event) {
+    var button = $(event.relatedTarget);
+    var carId = button.data('car-id');
+    var carTitle = button.data('car-title');
+    var price = button.data('price');
+    var userId = button.data('user-id');
+    var startDate = button.data('start-date');
+    var endDate = button.data('end-date');
+    
+    var modal = $(this);
+    modal.find('#car_id').val(carId);
+    modal.find('#car_title').text(carTitle);
+    modal.find('#price_per_day').val(price);
+    modal.find('#user_id').val(userId);
+    modal.find('#start_date').val(startDate);
+    modal.find('#end_date').val(endDate);
+
+    // Recalculate total price whenever start or end date changes
+    calculateTotalPrice();
+});
+
+// Function to calculate total price based on the date range and daily price
+function calculateTotalPrice() {
+    var startDate = new Date($('#start_date').val());
+    var endDate = new Date($('#end_date').val());
+    var pricePerDay = parseFloat($('#price_per_day').val());
+
+    if (startDate && endDate && pricePerDay) {
+        // Calculate the number of days between the start and end dates
+        var timeDiff = endDate - startDate;
+        var days = Math.ceil(timeDiff / (1000 * 60 * 60 * 24)); // Convert milliseconds to days
+
+        // Ensure that endDate is after startDate
+        if (days >= 0) {
+            var totalPrice = days * pricePerDay;
+            $('#totalprice').val(totalPrice.toFixed(2) + ' Tnd');
+        } else {
+            $('#totalprice').val('0 Tnd');
+        }
+    } else {
+        $('#totalprice').val('0 Tnd');
+    }
+}
+
+// Add event listeners to recalculate the total price when the dates change
+$('#start_date, #end_date').on('change', function () {
+    calculateTotalPrice();
+});
+
 </script>
 </body>
 

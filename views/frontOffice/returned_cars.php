@@ -2,14 +2,9 @@
 include '../../controllers/ContractController.php';
 require_once '../../controllers/AuthController.php';
 
-// Check user roles for access
-AuthController::checkMultipleRoles(['client', 'agent']);
+AuthController::checkMultipleRoles(['agent']);
 $currentUser = AuthController::getCurrentUser();
-
-// Get current page
 $page = isset($_GET['page']) ? (int)$_GET['page'] : 1;
-
-// Fetch recently returned cars for the current page
 $contractController = new ContractController();
 $result = $contractController->getRecentlyReturnedCarsLast7Days($page);
 $recentlyReturnedCars = $result['cars'];
@@ -25,7 +20,6 @@ $totalPages = $result['totalPages'];
     <title>Recently Returned Cars - Last 7 Days</title>
 
     <style>
-        /* Base Reset */
         * {
             margin: 0;
             padding: 0;
@@ -33,7 +27,6 @@ $totalPages = $result['totalPages'];
             font-family: 'Arial', sans-serif;
         }
 
-        /* Body Style */
         body {
             background-color: #eef2f7;
             color: #333;
@@ -43,7 +36,6 @@ $totalPages = $result['totalPages'];
             justify-content: space-between;
         }
 
-        /* Main Content Styling */
         .container1 {
             background-color: #fff;
             padding: 30px;
@@ -55,7 +47,6 @@ $totalPages = $result['totalPages'];
             text-align: center;
         }
 
-        /* Header */
         h1 {
             text-align: center;
             margin-bottom: 30px;
@@ -64,7 +55,6 @@ $totalPages = $result['totalPages'];
             font-weight: bold;
         }
 
-        /* Beautified Table Style */
         table {
             width: 100%;
             border-collapse: collapse;
@@ -100,13 +90,11 @@ $totalPages = $result['totalPages'];
             font-size: 15px;
         }
 
-        /* Row Hover Effect */
         tr:hover {
             background-color: rgba(0, 123, 255, 0.3);
             transform: scale(1.02);
         }
 
-        /* Stripe Effect */
         tbody tr:nth-child(even) {
             background-color: #f8f9fa;
         }
@@ -115,7 +103,6 @@ $totalPages = $result['totalPages'];
             background-color: #ffffff;
         }
 
-        /* Rounded Corners */
         tbody tr {
             transition: transform 0.2s;
         }
@@ -124,7 +111,6 @@ $totalPages = $result['totalPages'];
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
         }
 
-        /* Button Style */
         .btn-back {
             display: inline-block;
             padding: 14px 28px;
@@ -144,7 +130,6 @@ $totalPages = $result['totalPages'];
             transform: translateY(-2px);
         }
 
-        /* Footer Style */
         footer {
             background-color: #333;
             color: white;
@@ -157,7 +142,6 @@ $totalPages = $result['totalPages'];
             right: 0;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
             .container1 {
                 padding: 20px;

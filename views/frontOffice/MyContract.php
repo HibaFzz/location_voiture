@@ -2,16 +2,12 @@
 include '../../controllers/ContractController.php';
 require_once '../../controllers/AuthController.php';
 
-// Ensure the user has the appropriate role
 AuthController::checkMultipleRoles(['client', 'agent']);
 
-// Get the current logged-in user
-$currentUser = AuthController::getCurrentUser(); // Fetch current user info
+$currentUser = AuthController::getCurrentUser(); 
 
-// Create an instance of ContractController
 $contractController = new ContractController();
 
-// Filters with the current user ID pre-applied
 $filters = [
     'status' => $_GET['status'] ?? '',
     'start_date' => $_GET['start_date'] ?? '',
@@ -19,22 +15,17 @@ $filters = [
     'search' => $_GET['search'] ?? '',
     'sort_by' => $_GET['sort_by'] ?? '',
     'order' => $_GET['order'] ?? 'asc',
-    'user_id' => $currentUser['id'], // Filter contracts for the current user
+    'user_id' => $currentUser['id'],
     'vehicletitle' => $_GET['vehicletitle'] ?? ''
 ];
 
-// Pagination settings
 $limit = 9;
-$page = $_GET['page'] ?? 1; // Get the current page or set to 1 if not defined
-$offset = ($page - 1) * $limit; // Calculate offset for SQL query
+$page = $_GET['page'] ?? 1; 
+$offset = ($page - 1) * $limit;
 
-// Fetch contracts based on filters and pagination
 $contracts = $contractController->filterCurrentContracts($filters, $limit, $offset);
-
-// Get total number of contracts for pagination
 $totalContracts = $contractController->getTotalCurentContracts($filters);
 
-// Calculate total pages
 $totalPages = ceil($totalContracts / $limit);
 ?>
 

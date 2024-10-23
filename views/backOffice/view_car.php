@@ -2,7 +2,7 @@
 require_once '../../controllers/AuthController.php';
 AuthController::checkMultipleRoles(['admin']);
 include '../../controllers/CarController.php';
-
+$currentUser = AuthController::getCurrentUser();
 $carsController = new CarController();
 
 if (isset($_GET['id'])) {
@@ -20,16 +20,10 @@ if (!$car) {
 $message = ""; // Initialize message variable
 
 // Get the user ID and car ID from GET parameters
-$user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null;
+$user_id = isset($_GET['user_id']) ? $_GET['user_id'] : $currentUser['id'];
 $car_id = isset($_GET['id']) ? $_GET['id'] : null; // Use 'id' for car ID
 $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
 $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
-
-if ($_SERVER['REQUEST_METHOD'] === 'GET' && $car_id !== null) { // Check if the request method is GET and if car_id is set
-    $result = $carsController->addContract($user_id, $car_id, $start_date, $end_date);
-    $message = $result; // Store the result message to display later
-    header('Location: ../frontOffice/list_contracts.php');
-}
 
 $car_title = isset($_GET['car_title']) ? $_GET['car_title'] : 'Selected Car'; // Get car title from URL
 $price_per_day = isset($_GET['price_per_day']) ? $_GET['price_per_day'] : 0; // Get price per day from URL
@@ -50,7 +44,7 @@ if ($car_id === null) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <h1 class="text-center text-primary mb-4">Luxury Car Rental - Car Details</h1>
+    <title>Luxury Car Rental - Car Details</title>
 
     <style>
         body {
@@ -360,7 +354,6 @@ if ($car_id === null) {
                     <h2>Starting from</h2>
                     <div class="price-per-day">€<?= number_format($car['priceperday'], 2); ?> / day</div>
                 </div>
-
             </div>
         </div>
 
@@ -368,8 +361,6 @@ if ($car_id === null) {
             <a href="list_cars.php" class="back-button">Back to Car List</a>
         </div>
     </div>
-
-
 
 
 </body>

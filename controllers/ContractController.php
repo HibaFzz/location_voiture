@@ -330,7 +330,7 @@ public function getTotalContracts($filters = [])
     public function getAvailableCars() {
         $db = config::getConnexion(); // Database connection
         // Assuming a database connection is already established
-        $stmt = $db->prepare("SELECT id, vehicletitle FROM cars WHERE disponible = 1"); // Removed the $this
+        $stmt = $db->prepare("SELECT id, vehicletitle,matricule FROM cars WHERE disponible = 1"); // Removed the $this
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_ASSOC); // Fetch as associative array
     }
@@ -554,9 +554,10 @@ public function markAsCompleted($contract_id) {
 public function getUserContracts($user_id) {
     $db = config::getConnexion();
     try {
-        // SQL query to fetch contracts for the current user
+        // SQL query to fetch contracts for the current user with action dates
         $sql = "SELECT contracts.id, cars.vehicletitle, contracts.start_date, contracts.end_date, 
-                       contracts.total_payment, contracts.status, contracts.payment_status, contracts.date_paid 
+                       contracts.total_payment, contracts.status, contracts.payment_status, contracts.date_paid,
+                       contracts.date_added, contracts.date_updated, contracts.date_canceled
                 FROM contracts 
                 JOIN cars ON contracts.car_id = cars.id 
                 WHERE contracts.user_id = :user_id";
@@ -571,6 +572,7 @@ public function getUserContracts($user_id) {
         die('Error: ' . $e->getMessage());
     }
 }
+
 public function getRecentlyReturnedCarsLast7Days($page = 1, $limit = 10) {
     $db = config::getConnexion();
     try {
@@ -618,6 +620,14 @@ public function getRecentlyReturnedCarsLast7Days($page = 1, $limit = 10) {
         die('Error: ' . $e->getMessage());
     }
 }
+public function getUserByUsername($username) {
+    $db = config::getConnexion();
+    $stmt = $db->prepare("SELECT id, nom, prenom, email, numtelephone, cin FROM users WHERE username = :username");
+    $stmt->bindValue(':username', $username);
+    $stmt->execute();
+    return $stmt->fetch(PDO::FETCH_ASSOC);
+}
+
 
 }
 

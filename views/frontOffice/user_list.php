@@ -1,6 +1,6 @@
 <?php
 require_once '../../controllers/AuthController.php';
-AuthController::checkMultipleRoles(['client','agent']);
+AuthController::checkMultipleRoles(['agent']);
 include '../../controllers/UserController.php';
 
 $userController = new UserController();
@@ -209,15 +209,6 @@ $totalPages = ceil($totalUsers / $limit);
                             <button type="submit" class="btn btn-outline-info btn-sm">View</button>
                         </form>
                         
-                        <form method="get" action="update_user.php" style="display:inline;">
-                            <input type="hidden" name="id" value="<?= $user['id']; ?>">
-                            <button type="submit" class="btn btn-outline-warning btn-sm">Edit</button>
-                        </form>
-                        
-                        <form method="post" action="delete_user.php" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this user?');">
-                            <input type="hidden" name="id" value="<?= $user['id']; ?>">
-                            <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-                        </form>
                     </div>
                     
                 </div>
@@ -246,7 +237,6 @@ $totalPages = ceil($totalUsers / $limit);
                 </li>
             </ul>
         </nav>
-    <a href="add_user.php" style="display: block; text-align: center; background-color: #007BFF; color: white; padding: 10px; border-radius: 5px; text-decoration: none; width: 150px; margin: 20px auto;">Add New User</a>
 
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>

@@ -1,6 +1,6 @@
 <?php
 require_once '../../controllers/AuthController.php';
-AuthController::checkMultipleRoles(['client','agent']);
+AuthController::checkMultipleRoles(['agent']);
 include '../../controllers/UserController.php';
 
 $userController = new UserController();

@@ -1,6 +1,23 @@
 <?php
 require_once '../../controllers/AuthController.php';
 AuthController::checkMultipleRoles(['admin']);
+
+// Check if a session is already active before starting a new session
+if (session_status() === PHP_SESSION_NONE) {
+    session_start(); // Start a session if not already active
+}
+
+// Check if logout is needed before any output
+if (isset($_GET['action']) && $_GET['action'] === 'logout') {
+    AuthController::logout(); // Call the logout method
+}
+
+$currentUser = AuthController::getCurrentUser();
+
+// Function to check if the current page is the active one
+function isActive($page) {
+    return basename($_SERVER['PHP_SELF']) === $page ? 'active' : '';
+}
 ?>
 <!doctype html>
 <html class="no-js" lang="en">
@@ -67,45 +84,56 @@ AuthController::checkMultipleRoles(['admin']);
 		============================================ -->
     <script src="js/vendor/modernizr-2.8.3.min.js"></script>
 </head>
+<style>
+        .active {
+            background-color: #007bff !important; /* Blue background */
+            color: white !important; /* White text */
+        }
 
-    <!--[if lt IE 8]>
-		<p class="browserupgrade">You are using an <strong>outdated</strong> browser. Please <a href="http://browsehappy.com/">upgrade your browser</a> to improve your experience.</p>
-	<![endif]-->
+        .active a {
+            color: white !important; /* Ensure links are white */
+        }
+    </style>
+
+<body>
     <!-- Start Left menu area -->
     <div class="left-sidebar-pro">
         <nav id="sidebar" class="">
             <div class="sidebar-header">
-                <a href="index.html"><img class="main-logo" src="img/logo/logo.png" alt="" /></a>
+                <a href="index.html"><img class="main-logo" src="uploads/lgog.png" alt="" /></a>
                 <strong><a href="index.html"><img src="img/logo/logosn.png" alt="" /></a></strong>
             </div>
             <div class="left-custom-menu-adp-wrap comment-scrollbar">
                 <nav class="sidebar-nav left-sidebar-menu-pro">
                     <ul class="metismenu" id="menu1">
-                        <li class="active">
-                            <a class="has-arrow" href="index.html">
-								   <span class="educate-icon educate-home icon-wrap"></span>
-								   <span class="mini-click-non">Home</span>
-								</a>
-                            <ul class="submenu-angle" aria-expanded="true">
-                                <li><a title="Dashboard v.1" href="dashboard.php"><span class="mini-sub-pro">Statistics</span></a></li>
-                                <li><a title="Dashboard v.2" href="list_cars.php"><span class="mini-sub-pro">Cars</span></a></li>
-                                <li><a title="Dashboard v.3" href="list_contracts.php"><span class="mini-sub-pro">Contracts</span></a></li>
-                                <li><a title="Dashboard v.3" href="user_list.php"><span class="mini-sub-pro">Users</span></a></li>
-                            </ul>
+                        <li class="<?= isActive('dashboard.php'); ?>">
+                            <a title="Dashboard" href="dashboard.php">
+                                <span class="educate-icon educate-home icon-wrap"></span>
+                                <span class="mini-click-non">Statistics</span>
+                            </a>
                         </li>
-                        <li>
-                            <a title="Landing Page" href="events.html" aria-expanded="false"><span class="educate-icon educate-event icon-wrap sub-icon-mg" aria-hidden="true"></span> <span class="mini-click-non">Event</span></a>
+                        <li class="<?= isActive('list_cars.php'); ?>">
+                            <a title="Cars" href="list_cars.php">
+                                <span class="mini-sub-pro">Cars</span>
+                            </a>
                         </li>
-                        
-                       
-                       
-                        
+                        <li class="<?= isActive('list_contracts.php'); ?>">
+                            <a title="Contracts" href="list_contracts.php">
+                                <span class="mini-sub-pro">Contracts</span>
+                            </a>
+                        </li>
+                        <li class="<?= isActive('user_list.php'); ?>">
+                            <a title="Users" href="user_list.php">
+                                <span class="mini-sub-pro">Users</span>
+                            </a>
+                        </li>
                     </ul>
                 </nav>
             </div>
         </nav>
     </div>
     <!-- End Left menu area -->
+
     <!-- Start Welcome area -->
     <div class="all-content-wrapper">
         <div class="header-advance-area">
@@ -118,41 +146,34 @@ AuthController::checkMultipleRoles(['admin']);
                                     <div class="col-lg-1 col-md-0 col-sm-1 col-xs-12">
                                         <div class="menu-switcher-pro">
                                             <button type="button" id="sidebarCollapse" class="btn bar-button-pro header-drl-controller-btn btn-info navbar-btn">
-													<i class="educate-icon educate-nav"></i>
-												</button>
+                                                <i class="educate-icon educate-nav"></i>
+                                            </button>
                                         </div>
                                     </div>
-                                    <div class="col-lg-6 col-md-7 col-sm-6 col-xs-12">
-                                        <div class="header-top-menu tabl-d-n">
-                                        </div>
-                                    </div>
+                                    <div class="col-lg-6 col-md-7 col-sm-6 col-xs-12"></div>
                                     <div class="col-lg-5 col-md-5 col-sm-12 col-xs-12">
                                         <div class="header-right-info">
                                             <ul class="nav navbar-nav mai-top-nav header-right-menu">
                                                 <li class="nav-item">
                                                     <a href="#" data-toggle="dropdown" role="button" aria-expanded="false" class="nav-link dropdown-toggle">
-															<img src="img/product/pro4.jpg" alt="" />
-															<span class="admin-name">Prof.Anderson</span>
-															<i class="fa fa-angle-down edu-icon edu-down-arrow"></i>
-														</a>
-                            <ul role="menu" class="dropdown-header-top author-log dropdown-menu animated zoomIn">
-                                <!-- Display the current user role -->
-                                <li><a href="my_account.php"><span class="edu-icon edu-home-admin author-log-ic"></span>My Account</a></li>
-                                <li><a href="profile.php"><span class="edu-icon edu-user-rounded author-log-ic"></span>My Profile</a></li>
-                                <li><a href="user_billing.php"><span class="edu-icon edu-money author-log-ic"></span>User Billing</a></li>
-                                <li><a href="settings.php"><span class="edu-icon edu-settings author-log-ic"></span>Settings</a></li>
-                                
-                                <!-- Add Historiques section -->
-                                <li><a href="historiques.php"><span class="edu-icon edu-course author-log-ic"></span>Historiques</a></li>
-
-                                <!-- Log out link -->
-                                <li><a href="../frontOffice/logout.php"><span class="edu-icon edu-locked author-log-ic"></span>Log Out</a></li>
-                            </ul>
-
+                                                        <?php if ($currentUser): ?>
+                                                            <?php if (!empty($currentUser['photo'])): ?>
+                                                                <img src="<?=$currentUser['photo']; ?>" alt="User Image" class="rounded-circle" style="width: 30px; height: 30px;">
+                                                            <?php else: ?>
+                                                                <img src="uploads/default.png" alt="Default User Image" class="rounded-circle" style="width: 30px; height: 30px;">
+                                                            <?php endif; ?>
+                                                            <?php echo $currentUser['prenom'] . ' ' . $currentUser['nom']; ?>
+                                                        <?php else: ?>
+                                                            Guest
+                                                        <?php endif; ?>
+                                                        <i class="fa fa-angle-down edu-icon edu-down-arrow"></i>
+                                                    </a>
+                                                    <ul role="menu" class="dropdown-header-top author-log dropdown-menu animated zoomIn">
+                                                        <li><a href="my_account.php"><span class="edu-icon edu-home-admin author-log-ic"></span>My Account</a></li>
+                                                        <li><a href="profile.php"><span class="edu-icon edu-user-rounded author-log-ic"></span>My Profile</a></li>
+                                                        <li><a href="logout.php?action=logout"><span class="edu-icon edu-locked author-log-ic"></span>Log Out</a></li>
+                                                    </ul>
                                                 </li>
-                                                <li class="nav-item nav-setting-open"><a href="#" data-toggle="dropdown" role="button" aria-expanded="false" class="nav-link dropdown-toggle"><i class="educate-icon educate-menu"></i></a>
-
-                                                    <div role="menu" class="admintab-wrap menu-setting-wrap menu-setting-wrap-bg dropdown-menu animated zoomIn">                                                 
                                             </ul>
                                         </div>
                                     </div>
@@ -163,10 +184,10 @@ AuthController::checkMultipleRoles(['admin']);
                 </div>
             </div>
 
+        </div>
     </div>
-    <body></body>
 
-    <!-- jquery
+       <!-- jquery
 		============================================ -->
     <script src="js/vendor/jquery-1.12.4.min.js"></script>
     <!-- bootstrap JS
@@ -224,8 +245,6 @@ AuthController::checkMultipleRoles(['admin']);
     <!-- main JS
 		============================================ -->
     <script src="js/main.js"></script>
-    <!-- tawk chat JS
-		============================================ -->
-    <script src="js/tawk-chat.js"></script>
+
 
 </html>

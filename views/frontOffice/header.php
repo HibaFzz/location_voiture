@@ -26,10 +26,10 @@ function isActive($page) {
     <!-- Include your CSS and JS files -->
     <link rel="stylesheet" href="css/style.css">
     <style>
-        /* CSS for the active state of the button */
+
         .nav-item.active .nav-link {
-            font: #f96d00; /* Color when the button is active */
-            color: white; /* Text color change for contrast */
+            font: #f96d00; 
+            color: white;
         }
     </style>
 </head>
@@ -44,13 +44,13 @@ function isActive($page) {
 
     <div class="collapse navbar-collapse" id="ftco-nav">
       <ul class="navbar-nav ml-auto">
-        <li class="nav-item <?= isActive('index.php'); ?>"><a href="index.php" class="nav-link">Home</a></li>
         <li class="nav-item <?= isActive('about.php'); ?>"><a href="about.php" class="nav-link">About</a></li>
         
         <li class="nav-item <?= isActive('list_cars.php'); ?>"><a href="list_cars.php" class="nav-link">Cars</a></li>
-       
+        <?php if ($currentUser['role'] === 'agent'): ?>
+          <li class="nav-item <?= isActive('returned_cars.php'); ?>"><a href="returned_cars.php" class="nav-link">Returned Cars</a></li>
           <li class="nav-item <?= isActive('list_contracts.php'); ?>"><a href="list_contracts.php" class="nav-link">Contracts</a></li>
-        <?php if ($currentUser['role'] === 'client'): ?>
+        
           <li class="nav-item <?= isActive('user_list.php'); ?>"><a href="user_list.php" class="nav-link">Users</a></li>
         <?php endif; ?>
         

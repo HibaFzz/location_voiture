@@ -1,15 +1,14 @@
 <?php
 include '../../controllers/UserController.php';
-session_start(); // Start session at the beginning of your script
+session_start();
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = $_POST['username'];
     $password = $_POST['password'];
 
-    $userController = new UserController(); // Assuming UserController is your controller class
+    $userController = new UserController();
 
     if ($userController->loginUser($username, $password)) {
-        // User is successfully logged in and redirected based on role
     } else {
         $error_message = "Invalid username or password!";
     }
@@ -20,12 +19,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Login</title>
-    <link rel="stylesheet" href="styles.css"> <!-- Lien vers un fichier CSS pour styliser le formulaire -->
+    <title>Location de Voiture - Connexion</title>
+    <style>
+       
+        body {
+            font-family: 'Poppins', sans-serif;
+            background: linear-gradient(to bottom right, #003366, #4a90e2);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: #fff;
+        }
+
+        body::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: url('car-background.jpg') no-repeat center center/cover;
+            opacity: 0.3; 
+            z-index: -1;
+        }
+
+        .login-container {
+            background-color: rgba(0, 51, 102, 0.85); 
+            padding: 40px;
+            border-radius: 12px;
+            width: 350px;
+            text-align: center;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+        }
+
+        h2 {
+            margin-bottom: 25px;
+            font-size: 28px;
+            color: #fff;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+            text-align: left;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 16px;
+            color: #dcdcdc;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background-color: #4a90e2;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+        }
+        .btn:hover {
+            background-color: #357abD;
+        }
+
+        .error-message {
+            color: #ff6961;
+            margin-bottom: 15px;
+        }
+
+        .links {
+            margin-top: 20px;
+        }
+        .links a {
+            color: #00aaff;
+            text-decoration: none;
+            font-size: 14px;
+        }
+        .links a:hover {
+            text-decoration: underline;
+        }
+    </style>
 </head>
 <body>
     <div class="login-container">
-        <h2>Connexion</h2>
+        <h2>Login</h2>
         
         <?php if (isset($error_message)): ?>
             <div class="error-message">
@@ -35,86 +125,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         
         <form action="login.php" method="POST">
             <div class="input-group">
-                <label for="username">Nom d'utilisateur:</label>
-                <input type="text" id="username" name="username" required>
+                <label for="username">Username:</label>
+                <input type="text" id="username" name="username" >
             </div>
             <div class="input-group">
-                <label for="password">Mot de passe:</label>
-                <input type="password" id="password" name="password" required>
+                <label for="password">Password:</label>
+                <input type="password" id="password" name="password" >
             </div>
-            <button type="submit" class="btn">Se connecter</button>
+            <button type="submit" class="btn">Connextion</button>
         </form>
-
-        <div class="links">
-            <a href="signup.php">Créer un compte</a> <!-- Lien vers la page d'inscription si besoin -->
-        </div>
     </div>
-
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
-        .login-container {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
-            width: 300px;
-            text-align: center;
-        }
-        h2 {
-            margin-bottom: 20px;
-            font-size: 24px;
-            color: #333;
-        }
-        .input-group {
-            margin-bottom: 15px;
-            text-align: left;
-        }
-        .input-group label {
-            display: block;
-            margin-bottom: 5px;
-            font-size: 14px;
-        }
-        .input-group input {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        .btn {
-            width: 100%;
-            padding: 10px;
-            background-color: #28a745;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-        }
-        .btn:hover {
-            background-color: #218838;
-        }
-        .error-message {
-            color: red;
-            margin-bottom: 15px;
-        }
-        .links {
-            margin-top: 15px;
-        }
-        .links a {
-            color: #007bff;
-            text-decoration: none;
-        }
-        .links a:hover {
-            text-decoration: underline;
-        }
-    </style>
 </body>
 </html>
-
-<!-- Your HTML login form here -->

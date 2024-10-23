@@ -26,9 +26,15 @@ $start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
 $end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'GET' && $car_id !== null) { // Check if the request method is GET and if car_id is set
-    $result = $carsController->addContract($user_id, $car_id, $start_date, $end_date);
-    $message = $result; // Store the result message to display later
+    try {
+        // Attempt to add a contract
+        $carsController->addContract($user_id, $car_id, $start_date, $end_date);
+        $message = "Contract added successfully."; // Success message
+    } catch (Exception $e) {
+        $message = "Error adding contract: " . $e->getMessage(); // Error message
+    }
 }
+
 
 $car_title = isset($_GET['car_title']) ? $_GET['car_title'] : 'Selected Car'; // Get car title from URL
 $price_per_day = isset($_GET['price_per_day']) ? $_GET['price_per_day'] : 0; // Get price per day from URL
@@ -359,12 +365,12 @@ if ($car_id === null) {
                     <h2>Starting from</h2>
                     <div class="price-per-day">€<?= number_format($car['priceperday'], 2); ?> / day</div>
                 </div>
-
-                <?php if ($car['disponible'] === 1): ?>
+                <?php if ($car['disponible'] === 1 || $currentUser['role'] === 'client'): ?>
                     <div style="text-align: center;"> <!-- Center the buttons -->
-                    <button id="bookButton" class="action-button">Book Now</button>
+                        <button id="bookButton" class="action-button">Book Now</button>
                     </div>
                 <?php endif; ?>
+
             </div>
         </div>
 

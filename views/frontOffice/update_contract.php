@@ -1,16 +1,14 @@
 <?php
-include '../../controllers/ContractController.php'; // Include the ContractController
+include '../../controllers/ContractController.php';
 require_once '../../controllers/AuthController.php';
 AuthController::checkMultipleRoles(['client','agent']);
 
-$contractController = new ContractController(); // Instance of ContractController
-$errors = []; // Initialize an array to hold error messages
+$contractController = new ContractController(); 
+$errors = []; 
 
-// Check if contract_id is provided via URL
 if (isset($_GET['id'])) {
-    $contractId = (int)$_GET['id']; // Cast to integer for safety
+    $contractId = (int)$_GET['id']; 
 
-    // Fetch the contract details using the provided contract ID
     try {
         $contract = $contractController->getContractById($contractId);
         if (!$contract) {
@@ -23,18 +21,25 @@ if (isset($_GET['id'])) {
     $errors[] = "No contract ID provided.";
 }
 
-// Check if the form is submitted
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($contract)) {
-    // Get input values
+
     $start_date = trim($_POST['start_date']);
     $end_date = trim($_POST['end_date']);
 
-    // Validate start and end dates
     if (empty($start_date)) {
-        $errors[] = "Start date is required.";
+        $errors['start_date'] = "Start date is required.";
     } elseif (!DateTime::createFromFormat('Y-m-d', $start_date)) {
-        $errors[] = "Invalid start date format. Use YYYY-MM-DD.";
+        $errors['start_date'] = "Invalid start date format. Use YYYY-MM-DD.";
+    } else {
+        // Check if start_date is greater than or equal to the current date
+        $currentDate = new DateTime(); // Get current date
+        $inputStartDate = new DateTime($start_date); // Convert input to DateTime object
+        
+        if ($inputStartDate < $currentDate) {
+            $errors['start_date'] = "Start date must be greater than or equal to today.";
+        }
     }
+    
 
     if (empty($end_date)) {
         $errors[] = "End date is required.";
@@ -44,7 +49,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($contract)) {
         $errors[] = "End date must be after the start date.";
     }
 
-    // If no errors, proceed to update the contract
     if (empty($errors)) {
         try {
             $contractController->updateContract($contractId, $start_date, $end_date);
@@ -57,7 +61,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($contract)) {
     }
 }
 
-// Display errors (if any)
 if (!empty($errors)) {
     foreach ($errors as $error) {
         echo "<p class='error-message'>" . htmlspecialchars($error) . "</p>";
@@ -170,30 +173,40 @@ if (!empty($errors)) {
             input[type="submit"] {
                 width: auto;
             }
+            .error {
+            color: red;
+            font-size: 0.875em;
+            margin-top: 5px;
+        }
         }
     </style>
 </head>
 <body>
-   <div style="padding-top: 100px;"> <!-- Added padding-top to increase space from header -->
+   <div style="padding-top: 100px;">
 
     <h2>Update Contract</h2>
 
-    <!-- Form to update contract -->
+
     <form action="" method="POST">
-        <div class="form-group">
-            <label for="start_date">Start Date</label>
-            <input type="date" id="start_date" name="start_date" value="<?php echo isset($contract['start_date']) ? htmlspecialchars($contract['start_date']) : ''; ?>" required>
+    <div class="form-group">
+            <label for="start_date">Start Date (YYYY-MM-DD):</label>
+            <input type="date" name="start_date" id="start_date" value="<?php echo isset($_POST['start_date']) ? $_POST['start_date'] : ''; ?>">
+            <?php if (!empty($errors['start_date'])): ?>
+                <div class="error"><?php echo $errors['start_date']; ?></div>
+            <?php endif; ?>
         </div>
 
         <div class="form-group">
-            <label for="end_date">End Date</label>
-            <input type="date" id="end_date" name="end_date" value="<?php echo isset($contract['end_date']) ? htmlspecialchars($contract['end_date']) : ''; ?>" required>
+            <label for="end_date">End Date (YYYY-MM-DD):</label>
+            <input type="date" name="end_date" id="end_date" value="<?php echo isset($_POST['end_date']) ? $_POST['end_date'] : ''; ?>">
+            <?php if (!empty($errors['end_date'])): ?>
+                <div class="error"><?php echo $errors['end_date']; ?></div>
+            <?php endif; ?>
         </div>
+    <input type="submit" value="Update Contract">
+</form>
 
-        <input type="submit" value="Update Contract">
-    </form>
 
-    <!-- Return to list of contracts link -->
     <div class="return-link">
         <a href="list_contracts.php">Return to List Contracts</a>
     </div>

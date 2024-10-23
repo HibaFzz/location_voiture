@@ -262,45 +262,58 @@ class UserController
     }
 }
 public function loginUser($username, $password)
-  {
-      $db = config::getConnexion();
-      $sql = "SELECT * FROM users WHERE username = :username";
-      
-      try {
-          $stmt = $db->prepare($sql);
-          $stmt->bindValue(':username', $username);
-          $stmt->execute();
-          $user = $stmt->fetch(PDO::FETCH_ASSOC);
-  
-          if ($user && password_verify($password, $user['password'])) {
-              // Set session data
-              $_SESSION['user'] = [
-                  'id' => $user['id'],
-                  'username' => $user['username'],
-                  'nom' => $user['nom'],
-                  'prenom' => $user['prenom'],
-                  'email' => $user['email'],
-                  'numtelephone' => $user['numtelephone'],
-                  'role' => $user['role'],
-                  'date_of_birth' => $user['date_of_birth'],
-                  'cin' => $user['cin'],
-                  'photo' => $user['photo'], 
-              ];
-  
-              // Redirect based on user role
-              if ($user['role'] === 'admin') {
-                  header('Location: ../backOffice/dashboard.php');
-              } else if ($user['role'] === 'agent' || $user['role'] === 'client') {
-                  header('Location: ../frontOffice/list_cars.php');
-              }
-              exit(); // Ensure the script stops after the redirection
-          } else {
-              return false; // Invalid credentials
-          }
-      } catch (Exception $e) {
-          die('Error: ' . $e->getMessage());
-      }
-  }
+{
+    $db = config::getConnexion();
+    $sql = "SELECT * FROM users WHERE username = :username";
+    
+    try {
+        $stmt = $db->prepare($sql);
+        $stmt->bindValue(':username', $username);
+        $stmt->execute();
+        $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($user) {
+            // Username exists, now verify the password
+            if (password_verify($password, $user['password'])) {
+                // Regenerate session ID to prevent session fixation
+                session_regenerate_id(true);
+                
+                // Set session data
+                $_SESSION['user'] = [
+                    'id' => $user['id'],
+                    'username' => $user['username'],
+                    'nom' => $user['nom'],
+                    'prenom' => $user['prenom'],
+                    'email' => $user['email'],
+                    'numtelephone' => $user['numtelephone'],
+                    'role' => $user['role'],
+                    'date_of_birth' => $user['date_of_birth'],
+                    'cin' => $user['cin'],
+                    'photo' => $user['photo'], 
+                ];
+
+                // Redirect based on user role
+                $redirectUrl = '../frontOffice/list_cars.php'; // Default redirect
+                if ($user['role'] === 'admin') {
+                    $redirectUrl = '../backOffice/dashboard.php';
+                } else if ($user['role'] === 'agent' || $user['role'] === 'client') {
+                    $redirectUrl = '../frontOffice/list_cars.php';
+                }
+                header('Location: ' . $redirectUrl);
+                exit(); // Ensure the script stops after the redirection
+            } else {
+                return "Invalid password."; // Incorrect password
+            }
+        } else {
+            return "Username not found."; // Username doesn't exist
+        }
+    } catch (Exception $e) {
+        error_log('Login error: ' . $e->getMessage()); // Log the error
+        return "An error occurred during login. Please try again later."; // General error message
+    }
+}
+
+
   public function usernameExists($username)
   {
       $sql = "SELECT COUNT(*) FROM users WHERE username = :username";
@@ -315,6 +328,40 @@ public function loginUser($username, $password)
           die('Error: ' . $e->getMessage());
       }
   }
+  public function signUp($username, $nom, $prenom, $email, $numtelephone, $password, $role, $date_of_birth, $cin, $photo)
+{
+    // Vérification si le CIN est unique
+    if ($this->cinExists($cin)) {
+        throw new Exception("CIN already exists");
+    }
+
+    if ($this->usernameExists($username)) {
+        throw new Exception("Username already exists");
+    }
+
+    $sql = "INSERT INTO users (username, nom, prenom, email, numtelephone, password, role, date_of_birth, cin, photo) 
+            VALUES (:username, :nom, :prenom, :email, :numtelephone, :password, :role, :date_of_birth, :cin, :photo)";
+    $db = config::getConnexion();
+
+    try {
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            ':username' => $username,
+            ':nom'      => $nom,
+            ':prenom'   => $prenom,
+            ':email'    => filter_var($email, FILTER_SANITIZE_EMAIL), // Nettoyage de l'email
+            ':numtelephone' => $numtelephone,
+            ':password' => password_hash($password, PASSWORD_BCRYPT),
+            ':role'     => $role,
+            ':date_of_birth' => $date_of_birth,
+            ':cin'      => $cin,
+            ':photo'    => $photo
+        ]);
+    } catch (Exception $e) {
+        throw new Exception($e->getMessage());
+    }
+}
+
 
    
 }

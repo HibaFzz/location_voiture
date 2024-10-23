@@ -301,54 +301,58 @@ class CarController
             $stmt->bindParam(':car_id', $car_id, PDO::PARAM_INT);
             $stmt->execute();
     
-            echo "Car availability updated successfully.";
         } catch (Exception $e) {
             die('Error: ' . $e->getMessage());
         }
     }
     
-    public function addContract($user_id, $car_id, $start_date, $end_date) {
-        $db = config::getConnexion();
-        try {
-            // Fetch car details for price per day
-            $carModel = new CarController();
-            $car = $carModel->getCar($car_id);
+    public function addContract($user_id, $car_id, $start_date, $end_date): void {
+    $db = config::getConnexion();
     
-            if (!$car) {
-                throw new Exception("Car not found");
-            }
-    
-            // Calculate the number of days between start and end date
-            $start = new DateTime($start_date);
-            $end = new DateTime($end_date);
-            $interval = $start->diff($end);
-            $nbJours = $interval->days;
-    
-            // Calculate total payment
-            $totalPayment = $nbJours * $car['priceperday'];
-            $currentDate = date('Y-m-d H:i:s'); // Date actuelle pour l'ajout du contrat
-    
-            // SQL to insert contract with payment_status as 'pending'
-            $sql = "INSERT INTO contracts (user_id, car_id, start_date, end_date, total_payment, status, date_added, payment_status) 
-                    VALUES (:user_id, :car_id, :start_date, :end_date, :total_payment, 'active', :date_added, 'pending')";
-    
-            $stmt = $db->prepare($sql);
-            $stmt->bindParam(':user_id', $user_id);
-            $stmt->bindParam(':car_id', $car_id);
-            $stmt->bindParam(':start_date', $start_date);
-            $stmt->bindParam(':end_date', $end_date);
-            $stmt->bindParam(':total_payment', $totalPayment);
-            $stmt->bindParam(':date_added', $currentDate);
-            $stmt->execute();
-    
-            // Update car availability to 'no' (not available)
-            $carModel->updateCarAvailability($car_id, false);
-            
-        } catch (Exception $e) {
-            die('Error: ' . $e->getMessage());
+    try {
+        // Fetch car details for price per day
+        $carModel = new CarController();
+        $car = $carModel->getCar($car_id);
+
+        if (!$car) {
+            // Log error and exit without returning
+            error_log("Car with ID $car_id not found.");
+            return; // Exit function early if car not found
         }
+
+        // Calculate the number of days between start and end date
+        $start = new DateTime($start_date);
+        $end = new DateTime($end_date);
+        $interval = $start->diff($end);
+        $nbJours = $interval->days;
+
+        // Calculate total payment
+        $totalPayment = $nbJours * $car['priceperday'];
+        $currentDate = date('Y-m-d H:i:s'); // Current date for adding contract
+
+        // SQL to insert contract with payment_status as 'pending'
+        $sql = "INSERT INTO contracts (user_id, car_id, start_date, end_date, total_payment, status, date_added, payment_status) 
+                VALUES (:user_id, :car_id, :start_date, :end_date, :total_payment, 'active', :date_added, 'pending')";
+
+        $stmt = $db->prepare($sql);
+        $stmt->bindParam(':user_id', $user_id);
+        $stmt->bindParam(':car_id', $car_id);
+        $stmt->bindParam(':start_date', $start_date);
+        $stmt->bindParam(':end_date', $end_date);
+        $stmt->bindParam(':total_payment', $totalPayment);
+        $stmt->bindParam(':date_added', $currentDate);
+        $stmt->execute();
+
+        // Update car availability
+        $carModel->updateCarAvailability($car_id, false);
+
+    } catch (Exception $e) {
+        // Log error instead of halting the script
+        error_log('Error adding contract: ' . $e->getMessage());
+        // No return statement here, as this is a void function
     }
-    
+}
+
     
     
    

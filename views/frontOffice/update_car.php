@@ -417,12 +417,11 @@ if (isset($_POST['update_car']) && isset($carId)) {
     const brandSelect = document.querySelector('select[name="brand"]');
     const modelSelect = document.querySelector('select[name="model"]');
     
-    // Preset selected model (if available)
     const selectedModel = "<?php echo $model ?? ''; ?>"; 
 
     function updateModelOptions() {
         const selectedBrand = brandSelect.value;
-        modelSelect.innerHTML = ''; // Clear previous options
+        modelSelect.innerHTML = ''; 
 
         if (brandsWithModels[selectedBrand]) {
             brandsWithModels[selectedBrand].forEach(function(model) {
@@ -430,7 +429,6 @@ if (isset($_POST['update_car']) && isset($carId)) {
                 option.value = model;
                 option.textContent = model;
                 
-                // Check if the current model matches the previously selected model
                 if (model === selectedModel) {
                     option.selected = true;
                 }
@@ -440,10 +438,9 @@ if (isset($_POST['update_car']) && isset($carId)) {
         }
     }
 
-    // Add event listener to update models when brand is changed
     brandSelect.addEventListener('change', updateModelOptions);
 
-    // Initialize the models on page load
+
     updateModelOptions();
 </script>
 

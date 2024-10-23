@@ -1,15 +1,18 @@
+
 <?php
-include '../../controllers/CarController.php';
 require_once '../../controllers/AuthController.php';
 AuthController::checkMultipleRoles(['admin']);
 
+include '../../controllers/CarController.php';
 
 $carsController = new CarController();
 
 // Define the fuel types
-$essence = 'essence'; // Example value
-$diesel = 'diesel';   // Example value
-$all = '';             // Example value
+$essence = 'essence';  
+$diesel = 'diesel';  
+$electric = 'electric';   
+$all = '';              
+$currentUser = AuthController::getCurrentUser();
 
 // Initialize filters
 $filters = [
@@ -37,6 +40,30 @@ $cars = $carsController->filterCars($filters,$limit, $offset);
 $totalContracts = $carsController->getTotalCarsCount($filters);
 // Calculate total pages for pagination
 $totalPages = ceil($totalContracts / $limit);
+
+$message = ""; // Initialize message variable
+
+// Get the user ID and car ID from the GET parameters, with default values if not set
+$user_id = isset($_GET['user_id']) ? $_GET['user_id'] : null; 
+$car_id = isset($_GET['car_id']) ? $_GET['car_id'] : null;
+$start_date = isset($_GET['start_date']) ? $_GET['start_date'] : '';
+$end_date = isset($_GET['end_date']) ? $_GET['end_date'] : '';
+$currentUser = AuthController::getCurrentUser();
+
+$car_title = isset($_GET['car_title']) ? $_GET['car_title'] : 'Selected Car'; // Get car title from URL
+$price_per_day = isset($_GET['price_per_day']) ? $_GET['price_per_day'] : 0; // Get price per day from URL
+
+// Check for undefined variables
+if ($user_id === null) {
+    $message = "User ID is not set.";
+}
+
+if ($car_id === null) {
+    $message = "Car ID is not set.";
+}
+
+
+
 ?>
 
 <!DOCTYPE html>
@@ -147,115 +174,14 @@ $totalPages = ceil($totalContracts / $limit);
             background-color: #007BFF;
             color: white;
         }
-        /* Modal styling */
-        .modal {
-            display: none;
-            position: fixed;
-            z-index: 10;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.6);
-            overflow-y: auto;
-        }
-
-        .modal-dialog {
-            margin: 5% auto;
-            max-width: 500px;
-            width: 90%;
-        }
-
-        .modal-content {
-            background-color: #fff;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-            position: relative;
-        }
-
-        .modal-header, .modal-footer {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .modal-header {
-            border-bottom: 1px solid #ddd;
-        }
-
-        .modal-title {
-            color: #007BFF;
-            font-size: 24px;
-        }
-
-        .close {
-            font-size: 28px;
-            cursor: pointer;
-            background: none;
-            border: none;
-            color: #aaa;
-        }
-
-        .close:hover {
-            color: #333;
-        }
-
-        /* Modal Body Styling */
-        .modal-body {
-            padding: 20px;
-        }
-
-        .modal-body label {
-            font-weight: bold;
-            display: block;
+       
+         .actions {
             margin-top: 10px;
         }
-
-        .modal-body input[type="date"],
-        .modal-body input[type="text"] {
-            width: 100%;
-            padding: 10px;
-            margin-top: 5px;
-            border-radius: 5px;
-            border: 1px solid #ccc;
+        .actions a {
+            text-decoration: none;
+            margin: 0 5px;
         }
-
-        #selectedCar {
-            margin-top: 20px;
-        }
-
-        .modal-footer {
-            border-top: 1px solid #ddd;
-            padding: 10px;
-        }
-
-        .modal-footer button {
-            padding: 10px 20px;
-            border-radius: 5px;
-            border: none;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
-
-        .modal-footer .btn-secondary {
-            background-color: #6c757d;
-            color: white;
-        }
-
-        .modal-footer .btn-secondary:hover {
-            background-color: #5a6268;
-        }
-
-        .modal-footer .btn-primary {
-            background-color: #007BFF;
-            color: white;
-        }
-
-        .modal-footer .btn-primary:hover {
-            background-color: #0056b3;
-        }
-
        
 
         .price {
@@ -310,6 +236,8 @@ $totalPages = ceil($totalContracts / $limit);
                     <option value="">All</option>
                     <option value="<?= $essence; ?>" <?= (isset($filters['fueltype']) && in_array($essence, $filters['fueltype'])) ? 'selected' : ''; ?>>Essence</option>
                     <option value="<?= $diesel; ?>" <?= (isset($filters['fueltype']) && in_array($diesel, $filters['fueltype'])) ? 'selected' : ''; ?>>Diesel</option>
+                    <option value="<?= $electric; ?>" <?= (isset($filters['fueltype']) && in_array($electric, $filters['fueltype'])) ? 'selected' : ''; ?>>Electric</option>
+                
                 </select>
                 
                 <input type="submit" value="Filter" class="btn btn-outline-primary">
@@ -386,7 +314,7 @@ $totalPages = ceil($totalContracts / $limit);
         </li>
     </ul>
 </nav>
-
+     
 
 
 </body>

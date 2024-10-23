@@ -2,10 +2,8 @@
 require_once '../../controllers/AuthController.php';
 require_once '../../controllers/UserController.php';
 
-// Ensure the user is authenticated and has the correct roles (client or agent)
-AuthController::checkMultipleRoles(['client','agent']);
-
-// If no user is found (user is not authenticated), redirect to login or handle the error
+AuthController::checkMultipleRoles(['client']);
+$currentUser = AuthController::getCurrentUser();
 if (!$currentUser) {
     header('Location: login.php');
     exit;

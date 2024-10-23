@@ -1,66 +1,67 @@
 <?php
-include '../../controllers/ContractController.php'; // Include the ContractController
+include '../../controllers/ContractController.php';
 require_once '../../controllers/AuthController.php';
-AuthController::checkMultipleRoles(['client','agent']);
-$contractController = new ContractController(); // Instance of ContractController
+AuthController::checkMultipleRoles(['agent']);
+$contractController = new ContractController();
 $currentUser = AuthController::getCurrentUser();
 
-$errors = []; // Initialize an array to hold error messages
+$errors = []; 
 
-// Fetch available cars for the dropdown
-$cars = $contractController->getAvailableCars(); // Assume this method returns an array of cars
+$cars = $contractController->getAvailableCars();
 
-// Check if the form is submitted
 if (isset($_POST['submit'])) {
-    // Get input values
-    $user_id = trim($_POST['user_id']);
-    $car_title = trim($_POST['car_id']); // This will be the vehicle title
+
+    $username = trim($_POST['username']);
+    $car_title = trim($_POST['car_id']);
     $start_date = trim($_POST['start_date']);
     $end_date = trim($_POST['end_date']);
 
-    // Validate input fields
-    if (empty($user_id)) {
-        $errors[] = "User ID is required.";
+    if (empty($username)) {
+        $errors['username'] = "Username is required.";
+    } else {
+        $user = $contractController->getUserByUsername($username);
+        if (!$user) {
+            $errors['username'] = "Invalid username.";
+        } else {
+            $user_id = $user['id'];
+        }
     }
 
     if (empty($car_title)) {
-        $errors[] = "Car title is required.";
+        $errors['car_id'] = "Car selection is required.";
     } else {
-        // Convert the car title back to car ID for storage
-        $car_id = $contractController->getCarIdByTitle($car_title); // Fetch car ID using title
+        $car_id = $contractController->getCarIdByTitle($car_title);
         if (!$car_id) {
-            $errors[] = "Invalid car selected.";
+            $errors['car_id'] = "Invalid car selected.";
         }
     }
 
     if (empty($start_date)) {
-        $errors[] = "Start date is required.";
+        $errors['start_date'] = "Start date is required.";
     } elseif (!DateTime::createFromFormat('Y-m-d', $start_date)) {
-        $errors[] = "Invalid start date format. Use YYYY-MM-DD.";
+        $errors['start_date'] = "Invalid start date format. Use YYYY-MM-DD.";
+    } else {
+        $currentDate = new DateTime(); 
+        $inputStartDate = new DateTime($start_date);
+        
+        if ($inputStartDate < $currentDate) {
+            $errors['start_date'] = "Start date must be greater than or equal to today.";
+        }
     }
+    
 
     if (empty($end_date)) {
-        $errors[] = "End date is required.";
+        $errors['end_date'] = "End date is required.";
     } elseif (!DateTime::createFromFormat('Y-m-d', $end_date)) {
-        $errors[] = "Invalid end date format. Use YYYY-MM-DD.";
+        $errors['end_date'] = "Invalid end date format. Use YYYY-MM-DD.";
     } elseif ($start_date >= $end_date) {
-        $errors[] = "End date must be after the start date.";
+        $errors['end_date'] = "End date must be after the start date.";
     }
 
-    // If no errors, proceed to add the contract
     if (empty($errors)) {
         $contractController->addContract($user_id, $car_id, $start_date, $end_date);
-
-        // Redirect to the list of contracts after successful insertion
         header('Location: list_contracts.php');
         exit();
-    }
-}
-
-// Display errors (if any)
-if (!empty($errors)) {
-    foreach ($errors as $error) {
-        echo "<p>" . $error . "</p>"; // Output error message directly
     }
 }
 ?>
@@ -78,7 +79,6 @@ if (!empty($errors)) {
             background-color: #f7f9fc;
             color: #333;
             margin: 0;
-            padding: 20px;
         }
 
         h2 {
@@ -99,22 +99,27 @@ if (!empty($errors)) {
 
         .form-group {
             display: flex;
+            flex-direction: column;
             margin-bottom: 15px;
         }
 
         .form-group label {
-            flex-basis: 35%;
-            margin-right: 10px;
             font-weight: bold;
+            margin-bottom: 5px;
         }
 
         .form-group input[type="text"],
         .form-group input[type="date"],
         .form-group select {
-            flex-basis: 60%;
             padding: 8px;
             border: 1px solid #007bff;
             border-radius: 4px;
+        }
+
+        .error {
+            color: red;
+            font-size: 0.875em;
+            margin-top: 5px;
         }
 
         input[type="submit"] {
@@ -131,12 +136,6 @@ if (!empty($errors)) {
 
         input[type="submit"]:hover {
             background-color: #0056b3;
-        }
-
-        .error-message {
-            color: red;
-            font-weight: bold;
-            text-align: center;
         }
 
         .return-link {
@@ -159,11 +158,6 @@ if (!empty($errors)) {
                 flex-direction: column;
             }
 
-            .form-group label {
-                flex-basis: auto;
-                margin-bottom: 5px;
-            }
-
             .form-group input[type="text"],
             .form-group input[type="date"],
             .form-group select {
@@ -177,48 +171,53 @@ if (!empty($errors)) {
     </style>
 </head>
 <body>
+<div style="padding-top: 100px;"></div>
     <h2>Add A New Contract</h2>
 
-    <!-- Display errors if any -->
-    <?php if (!empty($errors)): ?>
-        <div class="error-message">
-            <?php foreach ($errors as $error): ?>
-                <p><?php echo $error; ?></p>
-            <?php endforeach; ?>
-        </div>
-    <?php endif; ?>
-
-    <!-- Form to add a new contract -->
     <form action="" method="POST">
         <div class="form-group">
-            <label for="user_id">User ID:</label>
-            <input type="text" name="user_id" id="user_id" required>
+            <label for="username">Username:</label>
+            <input type="text" name="username" id="username" value="<?php echo isset($_POST['username']) ? $_POST['username'] : ''; ?>">
+            <?php if (!empty($errors['username'])): ?>
+                <div class="error"><?php echo $errors['username']; ?></div>
+            <?php endif; ?>
         </div>
 
         <div class="form-group">
             <label for="car_id">Car:</label>
-            <select name="car_id" id="car_id" required>
+            <select name="car_id" id="car_id">
                 <option value="">Select Car</option>
                 <?php foreach ($cars as $car): ?>
-                    <option value="<?php echo $car['vehicletitle']; ?>"><?php echo $car['vehicletitle']; ?></option>
+                    <option value="<?php echo $car['vehicletitle']; ?>" <?php echo (isset($_POST['car_id']) && $_POST['car_id'] == $car['vehicletitle']) ? 'selected' : ''; ?>>
+                        <?php echo $car['vehicletitle']; ?>
+                        <?php echo $car['matricule'];?>
+                    </option>
                 <?php endforeach; ?>
             </select>
+            <?php if (!empty($errors['car_id'])): ?>
+                <div class="error"><?php echo $errors['car_id']; ?></div>
+            <?php endif; ?>
         </div>
 
         <div class="form-group">
             <label for="start_date">Start Date (YYYY-MM-DD):</label>
-            <input type="date" name="start_date" id="start_date" required>
+            <input type="date" name="start_date" id="start_date" value="<?php echo isset($_POST['start_date']) ? $_POST['start_date'] : ''; ?>">
+            <?php if (!empty($errors['start_date'])): ?>
+                <div class="error"><?php echo $errors['start_date']; ?></div>
+            <?php endif; ?>
         </div>
 
         <div class="form-group">
             <label for="end_date">End Date (YYYY-MM-DD):</label>
-            <input type="date" name="end_date" id="end_date" required>
+            <input type="date" name="end_date" id="end_date" value="<?php echo isset($_POST['end_date']) ? $_POST['end_date'] : ''; ?>">
+            <?php if (!empty($errors['end_date'])): ?>
+                <div class="error"><?php echo $errors['end_date']; ?></div>
+            <?php endif; ?>
         </div>
 
         <input type="submit" name="submit" value="Add Contract">
     </form>
 
-    <!-- Return to list of contracts link -->
     <div class="return-link">
         <a href="list_contracts.php">Return to List Contracts</a>
     </div>

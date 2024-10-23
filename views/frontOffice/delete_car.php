@@ -1,5 +1,7 @@
 <?php
 include '../../controllers/ContractController.php';
+require_once '../../controllers/AuthController.php';
+AuthController::checkMultipleRoles(['client','agent']);
 
 $carsController = new ContractController();
 
